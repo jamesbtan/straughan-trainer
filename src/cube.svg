@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
+  <style>
+    .bg { fill: #1e1e24; }
+    .facelet { rx: 3px; ry: 3px; stroke: #18181b; stroke-width: 2px; }
+
+    /* Standard WCA Last Layer Palette (Yellow Top) */
+    .c-top   { fill: #ffd500; } /* U-face / Yellow */
+    .c-dim   { fill: #3f3f46; } /* Unoriented / Dark */
+    .c-front { fill: #009b48; } /* F / Green */
+    .c-back  { fill: #0046ad; } /* B / Blue */
+    .c-left  { fill: #ff5800; } /* L / Orange */
+    .c-right { fill: #b71234; } /* R / Red */
+  </style>
+
+  <!-- Base Plate -->
+  <rect width="240" height="240" rx="14" class="bg" />
+
+  <!-- ================= Back Edge Strips (B) ================= -->
+  <rect x="52"  y="28" width="40" height="12" class="facelet c-back" />
+  <rect x="100" y="28" width="40" height="12" class="facelet c-back" />
+  <rect x="148" y="28" width="40" height="12" class="facelet c-back" />
+
+  <!-- ================= Left Edge Strips (L) ================= -->
+  <rect x="28" y="52"  width="12" height="40" class="facelet c-left" />
+  <rect x="28" y="100" width="12" height="40" class="facelet c-left" />
+  <rect x="28" y="148" width="12" height="40" class="facelet c-left" />
+
+  <!-- ================= Right Edge Strips (R) ================= -->
+  <rect x="200" y="52"  width="12" height="40" class="facelet c-right" />
+  <rect x="200" y="100" width="12" height="40" class="facelet c-right" />
+  <rect x="200" y="148" width="12" height="40" class="facelet c-right" />
+
+  <!-- ================= Front Edge Strips (F) ================= -->
+  <rect x="52"  y="200" width="40" height="12" class="facelet c-front" />
+  <rect x="100" y="200" width="40" height="12" class="facelet c-front" />
+  <rect x="148" y="200" width="40" height="12" class="facelet c-front" />
+
+  <!-- ================= Up Face (9 Facelets) ================= -->
+  <!-- Top Row (B-side) -->
+  <rect x="52"  y="52"  width="40" height="40" class="facelet c-top" />
+  <rect x="100" y="52"  width="40" height="40" class="facelet c-top" />
+  <rect x="148" y="52"  width="40" height="40" class="facelet c-top" />
+
+  <!-- Middle Row -->
+  <rect x="52"  y="100" width="40" height="40" class="facelet c-top" />
+  <rect x="100" y="100" width="40" height="40" class="facelet c-top" />
+  <rect x="148" y="100" width="40" height="40" class="facelet c-top" />
+
+  <!-- Bottom Row (F-side) -->
+  <rect x="52"  y="148" width="40" height="40" class="facelet c-top" />
+  <rect x="100" y="148" width="40" height="40" class="facelet c-top" />
+  <rect x="148" y="148" width="40" height="40" class="facelet c-top" />
+</svg>
+
