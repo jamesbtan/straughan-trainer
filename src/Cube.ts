@@ -1,100 +1,41 @@
 export enum Face {
-  U = "U",
-  D = "D",
   F = "F",
   B = "B",
   L = "L",
   R = "R",
+  U = "U",
+  D = "D",
 };
-type Turn = [Face, 1 | 2 | 3];
+export enum Rotation {
+  x = "x",
+  y = "y",
+  z = "z",
+};
+export enum Slice {
+  M = "M",
+  E = "E",
+  S = "S",
+};
+
+type Move = [Face | Rotation, 1 | 2 | 3];
 type Sticker = [Face, number];
 
-type Cube = {
-  state: Record<Face, Array<Face>>,
-  mask: Array<Sticker> | null,
+export type MaskedFace = {
+  face: Face,
+  mask: boolean,
 };
 
 function isFace(value: string | undefined): value is Face {
   return Object.values(Face).includes(value as Face);
 }
-
-export function getCube(): Cube {
-  return {
-    "state": {
-      "U": Array(9).fill("U"),
-      "D": Array(9).fill("D"),
-      "F": Array(9).fill("F"),
-      "B": Array(9).fill("B"),
-      "L": Array(9).fill("L"),
-      "R": Array(9).fill("R"),
-    },
-    "mask": null,
-  };
+function isSlice(value: string | undefined): value is Slice {
+  return Object.values(Slice).includes(value as Slice);
 }
-
-export function alg(cube: Cube, movesStr: string) {
-  let moves = movesStr.split(" ");
-  let turns = moves.flatMap(fromStr);
-  for (const turn of turns) {
-    turnCube(cube, turn);
-  }
-  return cube;
-}
-
-// TODO support rotations
-// TODO support wide moves
-// TODO support slice moves
-function fromStr(move: string): Array<Turn> {
-  if (move.length == 0) {
-    throw new Error("Invalid move");
-  }
-  let face = move[0];
-  if (!isFace(face)) {
-    throw new Error("Invalid face");
-  }
-  if (move.length == 1) {
-    return [[face, 1]];
-  }
-  if (move.length != 2) {
-    throw new Error("Invalid turn");
-  }
-  switch (move[1]) {
-    case "2":
-      return [[face, 2]];
-    case "'":
-      return [[face, 3]];
-    default:
-      throw new Error("Invalid turn");
-  }
-}
-
-function stickerCycle(cube: Cube, cycle: Array<Sticker>, inverse: boolean = false) {
-  let key = cycle[0];
-  if (key === undefined) {
-    throw new Error("Cycle was empty");
-  }
-  let [oface, oindex] = key;
-  let buf = cube["state"][oface][oindex]!;
-  for (let i = 1; i < cycle.length; i++) {
-    let [face, index] = cycle[i]!;
-    let tmp = cube["state"][face][index]!;
-    cube["state"][face][index] = buf;
-    buf = tmp;
-  }
-  cube["state"][oface][oindex] = buf;
+function isRotation(value: string | undefined): value is Rotation {
+  return Object.values(Rotation).includes(value as Rotation);
 }
 
 const faceToCycles: Record<Face, Array<Array<Sticker>>> = {
-  [Face.U]: [ // B(012) -> R(012) -> F(012) -> L(012)
-    [[Face.B, 0], [Face.R, 0], [Face.F, 0], [Face.L, 0]],
-    [[Face.B, 1], [Face.R, 1], [Face.F, 1], [Face.L, 1]],
-    [[Face.B, 2], [Face.R, 2], [Face.F, 2], [Face.L, 2]],
-  ],
-  [Face.D]: [ // B(678) -> L(678) -> F(678) -> R(678)
-    [[Face.B, 6], [Face.L, 6], [Face.F, 6], [Face.R, 6]],
-    [[Face.B, 7], [Face.L, 7], [Face.F, 7], [Face.R, 7]],
-    [[Face.B, 8], [Face.L, 8], [Face.F, 8], [Face.R, 8]],
-  ],
   [Face.F]: [ // U(678) -> R(036) -> D(210) -> L(852)
     [[Face.U, 6], [Face.R, 0], [Face.D, 2], [Face.L, 8]],
     [[Face.U, 7], [Face.R, 3], [Face.D, 1], [Face.L, 5]],
@@ -115,40 +56,291 @@ const faceToCycles: Record<Face, Array<Array<Sticker>>> = {
     [[Face.U, 5], [Face.B, 3], [Face.D, 5], [Face.F, 5]],
     [[Face.U, 8], [Face.B, 0], [Face.D, 8], [Face.F, 8]],
   ],
+  [Face.U]: [ // B(012) -> R(012) -> F(012) -> L(012)
+    [[Face.B, 0], [Face.R, 0], [Face.F, 0], [Face.L, 0]],
+    [[Face.B, 1], [Face.R, 1], [Face.F, 1], [Face.L, 1]],
+    [[Face.B, 2], [Face.R, 2], [Face.F, 2], [Face.L, 2]],
+  ],
+  [Face.D]: [ // B(678) -> L(678) -> F(678) -> R(678)
+    [[Face.B, 6], [Face.L, 6], [Face.F, 6], [Face.R, 6]],
+    [[Face.B, 7], [Face.L, 7], [Face.F, 7], [Face.R, 7]],
+    [[Face.B, 8], [Face.L, 8], [Face.F, 8], [Face.R, 8]],
+  ],
 }
 
-export function turnFace(cube: Cube, face: Face, inverse: boolean = false) {
-  // step 1, rotate the face
-  // 0 1 2
-  // 3 4 5
-  // 6 7 8
-  //
-  // 6 3 0
-  // 7 4 1
-  // 8 5 2
-  // Face [0,2,8,6] [1,5,7,3]
-  function helper(i: number): Sticker {
-    return [face, i]
-  }
-  let corners = [0, 2, 8, 6].map(helper);
-  let edges = [1, 5, 7, 3].map(helper);
-  stickerCycle(cube, corners, inverse);
-  stickerCycle(cube, edges, inverse);
+const rotationToCycle: Record<Rotation, Array<Face>> = {
+  [Rotation.x]: [Face.U, Face.B, Face.D, Face.F],
+  [Rotation.y]: [Face.F, Face.L, Face.B, Face.R],
+  [Rotation.z]: [Face.U, Face.R, Face.D, Face.L],
+};
 
-  // step 2, rotate the surrounding faces
-  let cycles = faceToCycles[face];
-  for (const cycle of cycles) {
-    stickerCycle(cube, cycle, inverse);
-  }
+// there should be some symmetry here to not need to list all
+// or maybe if we have a better indexing scheme idk
+const faceToFace: Record<Face, Partial<Record<Face, Array<number>>>> = {
+  [Face.F]: {
+    [Face.L]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.R]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.U]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.D]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+  },
+  [Face.B]: {
+    [Face.L]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.R]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.U]: [8, 7, 6, 5, 4, 3, 2, 1, 0],
+    [Face.D]: [8, 7, 6, 5, 4, 3, 2, 1, 0],
+  },
+  [Face.L]: {
+    [Face.F]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.B]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.U]: [2, 5, 8, 1, 4, 7, 0, 3, 6],
+    [Face.D]: [6, 3, 0, 7, 4, 1, 8, 5, 2],
+  },
+  [Face.R]: {
+    [Face.F]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.B]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.U]: [6, 3, 0, 7, 4, 1, 8, 5, 2],
+    [Face.D]: [2, 5, 8, 1, 4, 7, 0, 3, 6],
+  },
+  [Face.U]: {
+    [Face.F]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.B]: [8, 7, 6, 5, 4, 3, 2, 1, 0],
+    [Face.L]: [6, 3, 0, 7, 4, 1, 8, 5, 2],
+    [Face.R]: [2, 5, 8, 1, 4, 7, 0, 3, 6],
+  },
+  [Face.D]: {
+    [Face.F]: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    [Face.B]: [8, 7, 6, 5, 4, 3, 2, 1, 0],
+    [Face.L]: [2, 5, 8, 1, 4, 7, 0, 3, 6],
+    [Face.R]: [6, 3, 0, 7, 4, 1, 8, 5, 2],
+  },
 }
 
-function turnCube(cube: Cube, [ face, turns ]: Turn) {
-  for (let i = 0; i < turns; i++) {
-    turnFace(cube, face);
-  }
+const rotationToWings: Record<Rotation, Array<Face>> = {
+  [Rotation.x]: [Face.R, Face.L],
+  [Rotation.y]: [Face.U, Face.D],
+  [Rotation.z]: [Face.F, Face.B],
 }
 
-function setMask(cube: Cube, mask: Array<Sticker> | null): Cube {
-  cube["mask"] = mask;
-  return cube;
+const wide: Record<Face, Array<Move>> = {
+  [Face.F]: [[Face.B, 1], [Rotation.z, 1]],
+  [Face.B]: [[Face.F, 1], [Rotation.z, 3]],
+  [Face.L]: [[Face.R, 1], [Rotation.x, 3]],
+  [Face.R]: [[Face.L, 1], [Rotation.x, 1]],
+  [Face.U]: [[Face.D, 1], [Rotation.y, 1]],
+  [Face.D]: [[Face.U, 1], [Rotation.y, 3]],
+}
+
+const slice: Record<Slice, Array<Move>> = {
+  [Slice.S]: [[Face.F, 3], [Face.B, 1], [Rotation.z, 1]],
+  [Slice.E]: [[Face.U, 3], [Face.D, 1], [Rotation.y, 1]],
+  [Slice.M]: [[Face.R, 1], [Face.L, 3], [Rotation.x, 3]],
+}
+
+function stringToMoves(move: string): Array<Move> {
+  if (move.length == 0) {
+    throw new Error("Invalid move");
+  }
+  const initial = move[0]!;
+  let result;
+  if (isRotation(initial) || isFace(initial)) {
+    result = [[initial, 1] as Move];
+  } else if (isSlice(initial)) {
+    result = slice[initial];
+  } else {
+    const upper = initial.toUpperCase();
+    if (!isFace(upper)) {
+      throw new Error("Invalid move");
+    }
+    result = wide[upper];
+  }
+  if (move.length == 1) {
+    return result;
+  }
+  if (move.length != 2) {
+    throw new Error("Invalid turn");
+  }
+  const mult = (r: Move, x: number) => {
+    const clone: Move = [...r];
+    clone[1] *= x;
+    clone[1] %= 4;
+    return clone;
+  };
+  switch (move[1]) {
+    case "2":
+      return result.map(r => mult(r, 2));
+    case "'":
+      return result.map(r => mult(r, 3));
+    default:
+      throw new Error("Invalid turn");
+  }
+}
+export class Cube {
+  state: Record<Face, Array<MaskedFace>>;
+  mask: Set<Sticker>;
+
+  constructor() {
+    this.state = {
+      [Face.F]: [...Array(9).keys().map(() => ({"face": Face.F, "mask": false}))],
+      [Face.B]: [...Array(9).keys().map(() => ({"face": Face.B, "mask": false}))],
+      [Face.L]: [...Array(9).keys().map(() => ({"face": Face.L, "mask": false}))],
+      [Face.R]: [...Array(9).keys().map(() => ({"face": Face.R, "mask": false}))],
+      [Face.U]: [...Array(9).keys().map(() => ({"face": Face.U, "mask": false}))],
+      [Face.D]: [...Array(9).keys().map(() => ({"face": Face.D, "mask": false}))],
+    };
+    this.mask = new Set();
+  }
+
+  clone(): Cube {
+    const c = Object.create(Object.getPrototypeOf(this) as object) as Cube;
+    c.state = this.state;
+    c.mask = this.mask;
+    return c;
+  }
+
+  alg(movesStr: string): this {
+    const moves = movesStr.split(" ");
+    const simpl = moves.flatMap(stringToMoves);
+    for (const [initial, turns] of simpl) {
+      if (isRotation(initial)) {
+        this._rotateCube(initial, turns);
+      } else {
+        this.turnCube(initial, turns);
+      }
+    }
+    return this;
+  }
+
+
+  private stickerCycle(cycle: Array<Sticker>, inverse: boolean) {
+    const key = cycle[0];
+    if (key === undefined) {
+      throw new Error("Cycle was empty");
+    }
+    const [oface, oindex] = key;
+    let buf = this.state[oface][oindex]!;
+    const swap = (i: number) => {
+      const [face, index] = cycle[i]!;
+      const tmp = this.state[face][index]!;
+      this.state[face][index] = buf;
+      buf = tmp;
+    }
+    if (inverse) {
+      for (let i = 1; i < cycle.length; i++) {
+        swap(cycle.length - i);
+      }
+    } else {
+      for (let i = 1; i < cycle.length; i++) {
+        swap(i);
+      }
+    }
+    this.state[oface][oindex] = buf;
+  }
+
+  private innerCycle(face: Face, inverse: boolean) {
+    // 0 1 2
+    // 3 4 5
+    // 6 7 8
+    //
+    // 6 3 0
+    // 7 4 1
+    // 8 5 2
+    // Face [0,2,8,6] [1,5,7,3]
+    function helper(i: number): Sticker {
+      return [face, i]
+    }
+    const corners = [0, 2, 8, 6].map(helper);
+    const edges = [1, 5, 7, 3].map(helper);
+    this.stickerCycle(corners, inverse);
+    this.stickerCycle(edges, inverse);
+  }
+
+  turnFace(face: Face, inverse: boolean): this {
+    // step 1, rotate the face
+    this.innerCycle(face, inverse);
+
+    // step 2, rotate the surrounding faces
+    const cycles = faceToCycles[face];
+    for (const cycle of cycles) {
+      this.stickerCycle(cycle, inverse);
+    }
+    return this;
+  }
+
+  private turnCube(face: Face, turns: number) {
+    const inverse = turns == 3;
+    if (turns == 3) {
+      turns = 1;
+    }
+    for (let i = 0; i < turns; i++) {
+      this.turnFace(face, inverse);
+    }
+  }
+
+  // e.g. for x
+  // c0 = f2f[U][B]
+  // c1 = f2f[B][D]
+  // c2 = f2f[D][F]
+  // c3 = f2f[F][U]
+  // sU = 0..=8
+  // sB = c0[sU]
+  // sD = c1[sB]
+  // sF = c2[sD]
+  // vU = c3[sF]
+  // assert sU == vU
+  // cycle sU -> sB -> sD -> sF -> sU/vU
+
+  rotateCube(rotation: Rotation, inverse: boolean) {
+    const faces = rotationToCycle[rotation];
+    for (let i = 0; i < 9; i++) {
+      const cycle: Array<Sticker> = [];
+      let prev;
+      let curr;
+      let ind;
+      for (let j = 0; j < 4; j++) {
+        curr = faces[j]!;
+        if (j === 0) {
+          ind = i;
+        } else {
+          ind = faceToFace[prev!][curr]![ind!]!;
+        }
+        cycle.push([curr, ind]);
+        prev = curr;
+      }
+      this.stickerCycle(cycle, inverse);
+    }
+    const wings = rotationToWings[rotation];
+    this.innerCycle(wings[0]!, inverse);
+    this.innerCycle(wings[1]!, !inverse);
+  }
+
+  private _rotateCube(rotation: Rotation, turns: number) {
+    const inverse = turns === 3;
+    if (turns === 3) {
+      turns = 1;
+    }
+    for (let i = 0; i < turns; i++) {
+      this.rotateCube(rotation, inverse);
+    }
+  }
+
+  setMask(mask: Array<Sticker> | null): this {
+    for (const [face, ind] of this.mask) {
+      this.state[face][ind]!.mask = false;
+    }
+    this.mask = new Set(mask);
+    for (const [face, ind] of this.mask) {
+      this.state[face][ind]!.mask = true;
+    }
+    return this;
+  }
+
+  static allStickers(): Array<Sticker> {
+    return Object.values(Face).flatMap(f =>
+      [...Array(9).keys().map(i => [f, i] as Sticker)]
+    );
+  }
+
+  maskAll(): this {
+    return this.setMask(Cube.allStickers());
+  }
 }

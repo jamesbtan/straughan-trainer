@@ -4,65 +4,123 @@ import styles from './CubeRenderer.module.css';
 import * as c from './Cube.ts';
 
 const colors = {
-  [c.Face.U]: styles.c_yellow,
-  [c.Face.D]: styles.c_white,
-  [c.Face.F]: styles.c_green,
-  [c.Face.B]: styles.c_blue,
+  [c.Face.F]: styles.c_blue,
+  [c.Face.B]: styles.c_green,
   [c.Face.L]: styles.c_orange,
   [c.Face.R]: styles.c_red,
+  [c.Face.U]: styles.c_yellow,
+  [c.Face.D]: styles.c_white,
+}
+
+type StickerProps = {
+  face: c.MaskedFace,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+};
+
+function Sticker({ face, x, y, w, h }: StickerProps) {
+  return <rect x={x} y={y} width={w} height={h} className={
+    `${styles.facelet!} ${(face.mask) ? colors[face.face]! : styles.c_dim!}`
+  } />
 }
 
 
 export function CubeRenderer() {
-  let [cube, setCube] = useState(c.getCube());
+  const [cube, setCube] = useState(
+    new c.Cube()
+    .setMask(
+      c.Cube.allStickers()
+      .filter(([face, index]) => {
+        const m_slice = (index % 3) === 1;
+        const d_layer = index >= 3;
+        switch (face) {
+          case c.Face.U:
+            return false;
+          case c.Face.D:
+            return !m_slice;
+          case c.Face.L:
+            return d_layer;
+          case c.Face.B:
+            return d_layer && !m_slice;
+          case c.Face.F:
+            return !m_slice;
+          case c.Face.R:
+            return d_layer || index != 1;
+        }
+      })
+    )
+    // .alg("z")
+    // .maskAll()
+  );
 
   function handleKeydown(e: KeyboardEvent) {
-    console.log(e);
+    // console.log(e);
     // TODO swap to keyCode
     switch (e.key) {
       case "w":
-        console.log(cube);
-        return setCube({...c.alg(cube, "B")});
+        setCube(cube.clone().alg("B"));
+        return;
       case "e":
-        return setCube({...c.alg(cube, "L'")});
+        setCube(cube.clone().alg("L'"));
+        return;
       case "i":
-        return setCube({...c.alg(cube, "R")});
+        setCube(cube.clone().alg("R"));
+        return;
       case "o":
-        return setCube({...c.alg(cube, "B'")});
+        setCube(cube.clone().alg("B'"));
+        return;
       case "s":
-        return setCube({...c.alg(cube, "D")});
+        setCube(cube.clone().alg("D"));
+        return;
       case "d":
-        return setCube({...c.alg(cube, "L")});
+        setCube(cube.clone().alg("L"));
+        return;
       case "f":
-        return setCube({...c.alg(cube, "U'")});
+        setCube(cube.clone().alg("U'"));
+        return;
       case "g":
-        return setCube({...c.alg(cube, "F'")});
+        setCube(cube.clone().alg("F'"));
+        return;
       case "h":
-        return setCube({...c.alg(cube, "F")});
+        setCube(cube.clone().alg("F"));
+        return;
       case "j":
-        return setCube({...c.alg(cube, "U")});
+        setCube(cube.clone().alg("U"));
+        return;
       case "k":
-        return setCube({...c.alg(cube, "R'")});
+        setCube(cube.clone().alg("R'"));
+        return;
       case "l":
-        return setCube({...c.alg(cube, "D'")});
+        setCube(cube.clone().alg("D'"));
+        return;
       case "x":
-        // M'
-      case ",":
-        // M'
+        setCube(cube.clone().alg("M'"));
+        return;
+      case ".":
+        setCube(cube.clone().alg("M'"));
+        return;
       case "5":
-        // M
+        setCube(cube.clone().alg("M"));
+        return;
       case "6":
-        // M
+        setCube(cube.clone().alg("M"));
+        return;
       case "u":
-        // Rw
+        setCube(cube.clone().alg("r"));
+        return;
       case "m":
-        // Rw'
+        setCube(cube.clone().alg("r'"));
+        return;
     }
   }
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown);
-    return () => window.removeEventListener("keydown", handleKeydown);
+    return () => {
+      window.removeEventListener("keydown", handleKeydown);
+    }
   }, []);
 
   return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
@@ -70,32 +128,32 @@ export function CubeRenderer() {
 
     { // back
       Array(3).keys().map(i =>
-        <rect x={52 + (2-i)*48} y="28" width="40" height="12" className={`${styles.facelet} ${colors[cube["state"]["B"][i]!]}`} />
+        <Sticker face={cube.state["B"][i]!} x={52 + (2-i)*48} y={28} w={40} h={12} />
       )
     }
 
     { // left
       Array(3).keys().map(i =>
-        <rect x="28" y={52 + i*48} width="12" height="40" className={`${styles.facelet} ${colors[cube["state"]["L"][i]!]}`} />
+        <Sticker face={cube.state["L"][i]!} x={28} y={52 + i*48} w={12} h={40} />
       )
     }
 
     { // right
       Array(3).keys().map(i =>
-        <rect x="200" y={52 + (2-i)*48} width="12" height="40" className={`${styles.facelet} ${colors[cube["state"]["R"][i]!]}`} />
+        <Sticker face={cube.state["R"][i]!} x={200} y={52 + (2-i)*48} w={12} h={40} />
       )
     }
 
     { // front
       Array(3).keys().map(i =>
-        <rect x={52 + i*48} y="200" width="40" height="12" className={`${styles.facelet} ${colors[cube["state"]["F"][i]!]}`} />
+        <Sticker face={cube.state["F"][i]!} x={52 + i*48} y={200} w={40} h={12} />
       )
     }
 
     { // up
       Array(3).keys().flatMap(i => {
         return Array(3).keys().map(j =>
-          <rect x={52 + j*48} y={52 + i*48} width="40" height="40" className={`${styles.facelet} ${colors[cube["state"]["U"][3*i+j]!]}`} />
+          <Sticker face={cube.state["U"][3*i+j]!} x={52 + j*48} y={52 + i*48} w={40} h={40} />
         )
       })
     }
