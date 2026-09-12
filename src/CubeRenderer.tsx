@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CANONICAL_ALGS, INVERSE_MAP, type InverseElement } from "./algs.ts";
 
 import styles from './CubeRenderer.module.css';
 import * as c from './Cube.ts';
@@ -28,6 +29,29 @@ function Sticker({ face, x, y, w, h }: StickerProps) {
 
 
 export function CubeRenderer() {
+  const options = INVERSE_MAP
+    .map((v, k): InverseElement[] => {
+      return v.filter(i => CANONICAL_ALGS[i.alg_id]!.two_gen);
+    });
+  const probs: number[] = new Array(options.length+1);
+  probs[0] = 0;
+  for (let i = 1; i <= options.length; i++) {
+    probs[i] = probs[i-1]! + options[i-1]!.length;
+  }
+
+  const rng = Math.floor(Math.random() * probs[probs.length-1]!);
+  let alg_group;
+  let group_id;
+  for (let i = 1; i <= probs.length; i++) {
+    if (rng < probs[i]!) {
+      alg_group = i - 1;
+      group_id = rng - probs[i - 1]!;
+      break;
+    }
+  }
+
+  const metadata = options[alg_group!]![group_id!]!;
+  const alg = CANONICAL_ALGS[metadata.alg_id]!.alg;
   const [cube, setCube] = useState(
     new c.Cube()
     .setMask(
@@ -51,6 +75,9 @@ export function CubeRenderer() {
         }
       })
     )
+    .turnFace(c.Face.U, metadata.pre_auf)
+    .alg(alg, true)
+    .turnFace(c.Face.U, metadata.post_auf)
     // .alg("z")
     // .maskAll()
   );
