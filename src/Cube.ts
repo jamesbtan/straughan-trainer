@@ -17,7 +17,7 @@ export enum Slice {
   S = "S",
 };
 
-type Move = [Face | Rotation, 1 | 2 | 3];
+export type Move = [Face | Rotation, 1 | 2 | 3];
 type Sticker = [Face, number];
 
 export type MaskedFace = {
@@ -173,6 +173,40 @@ function stringToMoves(move: string): Move[] {
       throw new Error("Invalid turn");
   }
 }
+
+export class Alg {
+  moves: Move[];
+
+  constructor(movesStr: string | undefined = undefined) {
+    this.moves = [];
+    if (movesStr !== undefined) {
+      this.pushStr(movesStr);
+    }
+  }
+
+  invert(): this {
+    this.moves.reverse();
+    this.moves = this.moves.map(m => mult(m, 3));
+    return this;
+  }
+
+  concat(other: Alg): this {
+    this.moves = this.moves.concat(other.moves);
+    return this;
+  }
+
+  push(move: Move): this {
+    this.moves.push(move);
+    return this;
+  }
+
+  pushStr(movesStr: string): this {
+    const moves = movesStr.split(" ");
+    this.moves = this.moves.concat(moves.flatMap(stringToMoves));
+    return this;
+  }
+}
+
 export class Cube {
   state: Record<Face, MaskedFace[]>;
 
@@ -193,14 +227,8 @@ export class Cube {
     return c;
   }
 
-  alg(movesStr: string, inverse: boolean = false): this {
-    const moves = movesStr.split(" ");
-    let simpl = moves.flatMap(stringToMoves);
-    if (inverse) {
-      simpl.reverse();
-      simpl = simpl.map(m => mult(m, 3));
-    }
-    for (const [initial, turns] of simpl) {
+  apply(alg: Alg): this {
+    for (const [initial, turns] of alg.moves) {
       if (isRotation(initial)) {
         this._rotateCube(initial, turns);
       } else {

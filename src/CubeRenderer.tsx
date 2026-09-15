@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { CANONICAL_ALGS, INVERSE_MAP } from "./algs.ts";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { CANONICAL_ALGS, INVERSE_MAP, type InverseElement } from "./algs.ts";
 import { useCaseSelection } from "./useCaseSelection.ts";
 
 import styles from './CubeRenderer.module.css';
@@ -42,6 +42,25 @@ export function isSolved(cube: c.Cube): boolean {
   return true;
 }
 
+function getScramble(pool: InverseElement[]): c.Alg {
+  if (pool.length === 0) {
+    throw new Error("pool was empty");
+  }
+  const meta = pool[Math.floor(Math.random() * pool.length)]!;
+  const alg_ref = CANONICAL_ALGS[meta.alg_id]!;
+  const alg = new c.Alg();
+  if (meta.pre_auf !== 0) {
+    alg.push([c.Face.U, meta.pre_auf] as c.Move);
+  }
+  alg.concat(
+    new c.Alg(alg_ref.alg).invert()
+  );
+  if (meta.post_auf !== 0) {
+    alg.push([c.Face.U, meta.post_auf] as c.Move);
+  }
+  return alg;
+}
+
 
 export function CubeRenderer() {
   const { mask } = useCaseSelection();
@@ -49,11 +68,13 @@ export function CubeRenderer() {
     .map(v => v.filter(i => CANONICAL_ALGS[i.alg_id]?.two_gen));
   const pool = options.flatMap((group, i) => ((mask >> i) & 1) === 1 ? group : []);
 
-  const [cube, setCube] = useState(() => {
-    const seed = pool.length > 0
-      ? pool[Math.floor(Math.random() * pool.length)]
-      : undefined;
-    const meta = seed !== undefined ? CANONICAL_ALGS[seed.alg_id] : undefined;
+  const [mode, setMode] = useState<"scramble" | "scrambled" | "solving" | "solved">("scramble");
+  const currentAlg = useRef<c.Alg>(undefined);
+
+  const [cube, setCube] = useState<c.Cube>(() => new c.Cube());
+
+  const resetCube = () => {
+    console.log("reset");
     let cube = new c.Cube()
       .setMask(
         c.Cube.allStickers()
@@ -75,76 +96,101 @@ export function CubeRenderer() {
               return d_layer || index != 1;
           }
         })
-      )
-      .turnFace(c.Face.U, seed !== undefined ? seed.pre_auf : 0);
-    if (meta !== undefined && seed !== undefined) {
-      cube = cube
-        .alg(meta.alg, true)
-        .turnFace(c.Face.U, seed.post_auf);
+      );
+    if (currentAlg.current !== undefined) {
+      cube.apply(currentAlg.current);
     }
-    return cube;
-  });
+    console.log(currentAlg.current);
+    setCube(cube);
+  };
 
-  function handleKeydown(e: KeyboardEvent) {
-    // console.log(e);
+  useEffect(() => {
+    console.log("useeffect", mode);
+    if (mode === "scramble") {
+      currentAlg.current = getScramble(pool);
+      resetCube();
+      console.log("-> scrambled");
+      setMode("scrambled");
+    }
+  }, [mode]);
+
+  const handleKeydown = useCallback((e: KeyboardEvent) => {
     // TODO swap to keyCode
     switch (e.key) {
+      case " ":
+        console.log("keydown", mode);
+        if (mode === "solved") {
+          setMode("scramble");
+        } else if (mode === "solving") {
+          // TODO reset cube
+        } else if (mode === "scrambled") {
+          console.log("3");
+          // TODO show solution and allow next
+        }
+        return;
       case "w":
-        setCube(cube.clone().alg("B"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("B")));
+        break;
       case "e":
-        setCube(cube.clone().alg("L'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("L'")));
+        break;
       case "i":
-        setCube(cube.clone().alg("R"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("R")));
+        break;
       case "o":
-        setCube(cube.clone().alg("B'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("B'")));
+        break;
       case "s":
-        setCube(cube.clone().alg("D"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("D")));
+        break;
       case "d":
-        setCube(cube.clone().alg("L"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("L")));
+        break;
       case "f":
-        setCube(cube.clone().alg("U'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("U'")));
+        break;
       case "g":
-        setCube(cube.clone().alg("F'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("F'")));
+        break;
       case "h":
-        setCube(cube.clone().alg("F"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("F")));
+        break;
       case "j":
-        setCube(cube.clone().alg("U"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("U")));
+        break;
       case "k":
-        setCube(cube.clone().alg("R'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("R'")));
+        break;
       case "l":
-        setCube(cube.clone().alg("D'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("D'")));
+        break;
       case "x":
-        setCube(cube.clone().alg("M'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("M'")));
+        break;
       case ".":
-        setCube(cube.clone().alg("M'"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("M'")));
+        break;
       case "5":
-        setCube(cube.clone().alg("M"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("M")));
+        break;
       case "6":
-        setCube(cube.clone().alg("M"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("M")));
+        break;
       case "u":
-        setCube(cube.clone().alg("r"));
-        return;
+        setCube(cube => cube.clone().apply(new c.Alg("r")));
+        break;
       case "m":
-        setCube(cube.clone().alg("r'"));
+        setCube(cube => cube.clone().apply(new c.Alg("r'")));
+        break;
+      default:
         return;
     }
-  }
+    if (isSolved(cube)) {
+      setMode("solved");
+    } else {
+      setMode("solving");
+    }
+  }, [mode]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeydown);
@@ -152,8 +198,6 @@ export function CubeRenderer() {
       window.removeEventListener("keydown", handleKeydown);
     }
   }, []);
-
-  const solved = isSolved(cube);
 
   return <div className={styles.wrapper}>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
@@ -191,8 +235,8 @@ export function CubeRenderer() {
       })
     }
     </svg>
-    <div className={`${styles.status} ${solved ? styles.solved : styles.unsolved}`}>
-      {solved ? "Solved" : "Unsolved"}
+    <div className={`${styles.status} ${mode === "solved" ? styles.solved : styles.unsolved}`}>
+      {mode === "solved" ? "Solved" : "Unsolved"}
     </div>
   </div>;
 }
