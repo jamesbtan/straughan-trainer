@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { CANONICAL_ALGS, INVERSE_MAP, type InverseElement } from "./algs.ts";
+import { CANONICAL_ALGS, INVERSE_MAP } from "./algs.ts";
+import { useCaseSelection } from "./useCaseSelection.ts";
 
 import styles from './CubeRenderer.module.css';
 import * as c from './Cube.ts';
@@ -29,58 +30,46 @@ function Sticker({ face, x, y, w, h }: StickerProps) {
 
 
 export function CubeRenderer() {
+  const { mask } = useCaseSelection();
   const options = INVERSE_MAP
-    .map((v, k): InverseElement[] => {
-      return v.filter(i => CANONICAL_ALGS[i.alg_id]!.two_gen);
-    });
-  const probs: number[] = new Array(options.length+1);
-  probs[0] = 0;
-  for (let i = 1; i <= options.length; i++) {
-    probs[i] = probs[i-1]! + options[i-1]!.length;
-  }
+    // .map(v => v.filter(i => CANONICAL_ALGS[i.alg_id]?.two_gen));
+  const pool = options.flatMap((group, i) => ((mask >> i) & 1) === 1 ? group : []);
 
-  const rng = Math.floor(Math.random() * probs[probs.length-1]!);
-  let alg_group;
-  let group_id;
-  for (let i = 1; i <= probs.length; i++) {
-    if (rng < probs[i]!) {
-      alg_group = i - 1;
-      group_id = rng - probs[i - 1]!;
-      break;
+  const [cube, setCube] = useState(() => {
+    const seed = pool.length > 0
+      ? pool[Math.floor(Math.random() * pool.length)]
+      : undefined;
+    const meta = seed !== undefined ? CANONICAL_ALGS[seed.alg_id] : undefined;
+    let cube = new c.Cube()
+      .setMask(
+        c.Cube.allStickers()
+        .filter(([face, index]) => {
+          const m_slice = (index % 3) === 1;
+          const d_layer = index >= 3;
+          switch (face) {
+            case c.Face.U:
+              return false;
+            case c.Face.D:
+              return !m_slice;
+            case c.Face.L:
+              return d_layer;
+            case c.Face.B:
+              return d_layer && !m_slice;
+            case c.Face.F:
+              return !m_slice;
+            case c.Face.R:
+              return d_layer || index != 1;
+          }
+        })
+      )
+      .turnFace(c.Face.U, seed !== undefined ? seed.pre_auf : 0);
+    if (meta !== undefined && seed !== undefined) {
+      cube = cube
+        .alg(meta.alg, true)
+        .turnFace(c.Face.U, seed.post_auf);
     }
-  }
-
-  const metadata = options[alg_group!]![group_id!]!;
-  const alg = CANONICAL_ALGS[metadata.alg_id]!.alg;
-  const [cube, setCube] = useState(
-    new c.Cube()
-    .setMask(
-      c.Cube.allStickers()
-      .filter(([face, index]) => {
-        const m_slice = (index % 3) === 1;
-        const d_layer = index >= 3;
-        switch (face) {
-          case c.Face.U:
-            return false;
-          case c.Face.D:
-            return !m_slice;
-          case c.Face.L:
-            return d_layer;
-          case c.Face.B:
-            return d_layer && !m_slice;
-          case c.Face.F:
-            return !m_slice;
-          case c.Face.R:
-            return d_layer || index != 1;
-        }
-      })
-    )
-    .turnFace(c.Face.U, metadata.pre_auf)
-    .alg(alg, true)
-    .turnFace(c.Face.U, metadata.post_auf)
-    // .alg("z")
-    // .maskAll()
-  );
+    return cube;
+  });
 
   function handleKeydown(e: KeyboardEvent) {
     // console.log(e);
