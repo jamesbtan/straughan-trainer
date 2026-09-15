@@ -12,6 +12,20 @@
   font-weight: 700;
 }
 
+.connect {
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #3f3f46;
+  background: #27272a;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.connect:hover {
+  background: #3f3f46;
+}
+
 .solved { color: #009b48; }
 .unsolved { color: #ff5555; }
 

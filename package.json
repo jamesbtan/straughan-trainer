@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "dependencies": {
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "smartcube-web-bluetooth": "github:poliva/smartcube-web-bluetooth#44f1f091c6e980d9cc31e6d2863c4437eca3ab3c"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -18,7 +19,8 @@
     "dev": "bun --hot src/index.ts",
     "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
     "start": "NODE_ENV=production bun src/index.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "postinstall": "npm --prefix node_modules/smartcube-web-bluetooth ci --ignore-scripts && npm --prefix node_modules/smartcube-web-bluetooth run build"
   },
   "type": "module"
 }

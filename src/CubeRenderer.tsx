@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from "react";
 import { CANONICAL_ALGS, INVERSE_MAP, type InverseElement, type CanonicalAlg } from "./algs.ts";
 import { useCaseSelection } from "./useCaseSelection.ts";
+import { useSmartCube } from "./useSmartCube.ts";
 
 import styles from './CubeRenderer.module.css';
 import * as c from './Cube.ts';
@@ -42,11 +43,21 @@ export function isSolved(cube: c.Cube): boolean {
   return true;
 }
 
-function getScramble(pool: InverseElement[]): [InverseElement, CanonicalAlg] {
+let bag = new Set<number>();
+
+function getScramble(pool: InverseElement[]): [InverseElement, CanonicalAlg] | undefined {
   if (pool.length === 0) {
-    throw new Error("pool was empty");
+    return undefined;
   }
-  const meta = pool[Math.floor(Math.random() * pool.length)]!;
+  if (bag.size === 0) {
+    for (let i = 0; i < pool.length; i++) {
+      bag.add(i);
+    }
+  }
+  const ids = [...bag.values()];
+  const id = ids[Math.floor(Math.random() * ids.length)]!;
+  bag.delete(id)
+  const meta = pool[id]!;
   const alg_ref = CANONICAL_ALGS[meta.alg_id]!;
   return [meta, alg_ref];
 }
@@ -65,8 +76,8 @@ function inverseToAlg([meta, alg_ref]: [InverseElement, CanonicalAlg]): c.Alg {
   return alg;
 }
 
-function newScrambleCube([meta, alg_ref]: [InverseElement, CanonicalAlg]): c.Cube {
-  return new c.Cube()
+function newScrambleCube(scramble: [InverseElement, CanonicalAlg] | undefined): c.Cube {
+  const cube = new c.Cube()
     .setMask(
       c.Cube.allStickers()
       .filter(([face, index]) => {
@@ -88,7 +99,12 @@ function newScrambleCube([meta, alg_ref]: [InverseElement, CanonicalAlg]): c.Cub
         }
       })
     )
-    .apply(inverseToAlg([meta, alg_ref]));
+  if (scramble === undefined) {
+    return cube;
+  } else {
+    return cube
+      .apply(inverseToAlg(scramble));
+  }
 }
 
 type Mode = "scramble" | "scrambled" | "solving" | "solved";
@@ -102,7 +118,7 @@ type State = {
 };
 
 type Action =
-  | { type: "SCRAMBLE", scramble: [InverseElement, CanonicalAlg] }
+  | { type: "SCRAMBLE", scramble: [InverseElement, CanonicalAlg] | undefined }
   | { type: "MOVE", alg: c.Alg }
   | { type: "SPACE" }
   | { type: "ESCAPE" }
@@ -119,10 +135,11 @@ const initialState: State = {
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "SCRAMBLE": {
+      let cube = newScrambleCube(action.scramble);
       return {
         ...state,
-        cube: newScrambleCube(action.scramble),
-        mode: "scrambled",
+        cube,
+        mode: isSolved(cube) ? "solved" : "scrambled",
         scramble: action.scramble,
         solution: undefined,
       };
@@ -211,6 +228,15 @@ export function CubeRenderer() {
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
+  const { conn, connect, disconnect } = useSmartCube((move) => {
+    dispatch({ type: "MOVE", alg: new c.Alg(move) });
+  });
+
+  useEffect(() => {
+    bag.clear();
+    dispatch({ type: "SCRAMBLE", scramble: getScramble(pool) });
+  }, [mask]);
+
   useEffect(() => {
     if (state.mode === "scramble") {
       dispatch({ type: "SCRAMBLE", scramble: getScramble(pool) });
@@ -225,7 +251,7 @@ export function CubeRenderer() {
 
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" || e.key === "Backspace") {
         dispatch({ type: "ESCAPE" });
         return;
       }
@@ -283,6 +309,18 @@ export function CubeRenderer() {
     <div className={`${styles.status} ${state.mode === "solved" ? styles.solved : styles.unsolved}`}>
       {state.solution !== undefined ? state.solution : state.mode === "solved" ? "Solved" : "Unsolved"}
     </div>
+    <button
+      className={styles.connect}
+      onClick={() => {
+        if (conn !== null) {
+          disconnect();
+        } else {
+          void connect();
+        }
+      }}
+    >
+      {conn !== null ? `Disconnect ${conn.deviceName}` : "Connect smart cube"}
+    </button>
     <label>
       <input
         type="checkbox"
