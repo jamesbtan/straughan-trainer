@@ -98,25 +98,29 @@ type State = {
   mode: Mode,
   scramble: [InverseElement, CanonicalAlg] | undefined,
   solution: string | undefined,
+  autoadvance: boolean,
 };
 
 type Action =
   | { type: "SCRAMBLE", scramble: [InverseElement, CanonicalAlg] }
   | { type: "MOVE", alg: c.Alg }
   | { type: "SPACE" }
-  | { type: "ESCAPE" };
+  | { type: "ESCAPE" }
+  | { type: "TOGGLE_AUTOADVANCE" };
 
 const initialState: State = {
   cube: new c.Cube(),
   mode: "scramble",
   scramble: undefined,
   solution: undefined,
+  autoadvance: false,
 };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "SCRAMBLE": {
       return {
+        ...state,
         cube: newScrambleCube(action.scramble),
         mode: "scrambled",
         scramble: action.scramble,
@@ -164,6 +168,9 @@ function reducer(state: State, action: Action): State {
       }
       return state;
     }
+    case "TOGGLE_AUTOADVANCE": {
+      return { ...state, autoadvance: !state.autoadvance };
+    }
     case "ESCAPE": {
       return {
         ...state,
@@ -209,6 +216,12 @@ export function CubeRenderer() {
       dispatch({ type: "SCRAMBLE", scramble: getScramble(pool) });
     }
   }, [state.mode, pool]);
+
+  useEffect(() => {
+    if (!state.autoadvance || state.mode !== "solved") return;
+    const id = setTimeout(() => dispatch({ type: "SPACE" }), 500);
+    return () => clearTimeout(id);
+  }, [state.autoadvance, state.mode]);
 
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
@@ -270,5 +283,13 @@ export function CubeRenderer() {
     <div className={`${styles.status} ${state.mode === "solved" ? styles.solved : styles.unsolved}`}>
       {state.solution !== undefined ? state.solution : state.mode === "solved" ? "Solved" : "Unsolved"}
     </div>
+    <label>
+      <input
+        type="checkbox"
+        checked={state.autoadvance}
+        onChange={() => dispatch({ type: "TOGGLE_AUTOADVANCE" })}
+      />
+      auto-advance
+    </label>
   </div>;
 }
