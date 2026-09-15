@@ -1,6 +1,20 @@
 .bg { fill: #1e1e24; }
 .facelet { rx: 3px; ry: 3px; stroke: #18181b; stroke-width: 2px; }
 
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status {
+  font-weight: 700;
+}
+
+.solved { color: #009b48; }
+.unsolved { color: #ff5555; }
+
 /* Standard WCA Last Layer Palette (Yellow Top) */
 .c_dim    { fill: #3f3f46; } /* Unoriented / Dark */
 .c_yellow { fill: #ffd500; }

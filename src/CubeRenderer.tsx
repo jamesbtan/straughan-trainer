@@ -28,11 +28,25 @@ function Sticker({ face, x, y, w, h }: StickerProps) {
   } />
 }
 
+export function isSolved(cube: c.Cube): boolean {
+  const top = cube.state[c.Face.U];
+  for (const i of [0, 2, 6, 8]) {
+    if (top[i]?.face !== c.Face.U) return false;
+  }
+  for (const face of [c.Face.L, c.Face.F, c.Face.R, c.Face.B]) {
+    const stickers = cube.state[face];
+    if (stickers[0]!.face !== stickers[2]!.face) {
+      return false;
+    }
+  }
+  return true;
+}
+
 
 export function CubeRenderer() {
   const { mask } = useCaseSelection();
   const options = INVERSE_MAP
-    // .map(v => v.filter(i => CANONICAL_ALGS[i.alg_id]?.two_gen));
+    .map(v => v.filter(i => CANONICAL_ALGS[i.alg_id]?.two_gen));
   const pool = options.flatMap((group, i) => ((mask >> i) & 1) === 1 ? group : []);
 
   const [cube, setCube] = useState(() => {
@@ -139,7 +153,10 @@ export function CubeRenderer() {
     }
   }, []);
 
-  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
+  const solved = isSolved(cube);
+
+  return <div className={styles.wrapper}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
     <rect width="240" height="240" rx="14" className={styles.bg} />
 
     { // back
@@ -173,5 +190,9 @@ export function CubeRenderer() {
         )
       })
     }
-  </svg>;
+    </svg>
+    <div className={`${styles.status} ${solved ? styles.solved : styles.unsolved}`}>
+      {solved ? "Solved" : "Unsolved"}
+    </div>
+  </div>;
 }
