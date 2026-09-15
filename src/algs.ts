@@ -1,4 +1,4 @@
-type CanonicalAlg = {
+export type CanonicalAlg = {
   alg: string,
   aufs: [number, number][],
   two_gen?: true,

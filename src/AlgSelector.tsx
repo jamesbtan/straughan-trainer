@@ -40,7 +40,7 @@ export function AlgSelector() {
             checked={checked}
             onChange={() => { setMask(mask ^ (1 << i)); }}
           />
-          <label htmlFor={String(i)}>{title}</label>
+          <label htmlFor={String(i)}>{i+1} - {title}</label>
         </div>
       );
     }

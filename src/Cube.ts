@@ -190,6 +190,20 @@ export class Alg {
     return this;
   }
 
+  clone(): this {
+    const c = Object.create(Object.getPrototypeOf(this) as object) as this;
+    c.moves = [...this.moves];
+    return c;
+  }
+
+  toString(): string {
+    return this.moves.map(move => {
+      const [face, turn] = move;
+      const suffix = turn === 2 ? "2" : turn === 3 ? "'" : "";
+      return face + suffix;
+    }).join(" ");
+  }
+
   concat(other: Alg): this {
     this.moves = this.moves.concat(other.moves);
     return this;
@@ -224,6 +238,10 @@ export class Cube {
   clone(): Cube {
     const c = Object.create(Object.getPrototypeOf(this) as object) as Cube;
     c.state = this.state;
+    for(const key of Object.keys(this.state)) {
+      const face = key as Face;
+      c.state[face] = [...this.state[face]];
+    }
     return c;
   }
 

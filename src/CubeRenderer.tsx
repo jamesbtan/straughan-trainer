@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { CANONICAL_ALGS, INVERSE_MAP, type InverseElement } from "./algs.ts";
+import { useEffect, useReducer } from "react";
+import { CANONICAL_ALGS, INVERSE_MAP, type InverseElement, type CanonicalAlg } from "./algs.ts";
 import { useCaseSelection } from "./useCaseSelection.ts";
 
 import styles from './CubeRenderer.module.css';
@@ -42,12 +42,16 @@ export function isSolved(cube: c.Cube): boolean {
   return true;
 }
 
-function getScramble(pool: InverseElement[]): c.Alg {
+function getScramble(pool: InverseElement[]): [InverseElement, CanonicalAlg] {
   if (pool.length === 0) {
     throw new Error("pool was empty");
   }
   const meta = pool[Math.floor(Math.random() * pool.length)]!;
   const alg_ref = CANONICAL_ALGS[meta.alg_id]!;
+  return [meta, alg_ref];
+}
+
+function inverseToAlg([meta, alg_ref]: [InverseElement, CanonicalAlg]): c.Alg {
   const alg = new c.Alg();
   if (meta.pre_auf !== 0) {
     alg.push([c.Face.U, meta.pre_auf] as c.Move);
@@ -61,138 +65,166 @@ function getScramble(pool: InverseElement[]): c.Alg {
   return alg;
 }
 
+function newScrambleCube([meta, alg_ref]: [InverseElement, CanonicalAlg]): c.Cube {
+  return new c.Cube()
+    .setMask(
+      c.Cube.allStickers()
+      .filter(([face, index]) => {
+        const m_slice = (index % 3) === 1;
+        const d_layer = index >= 3;
+        switch (face) {
+          case c.Face.U:
+            return false;
+          case c.Face.D:
+            return !m_slice;
+          case c.Face.L:
+            return d_layer;
+          case c.Face.B:
+            return d_layer && !m_slice;
+          case c.Face.F:
+            return !m_slice;
+          case c.Face.R:
+            return d_layer || index != 1;
+        }
+      })
+    )
+    .apply(inverseToAlg([meta, alg_ref]));
+}
+
+type Mode = "scramble" | "scrambled" | "solving" | "solved";
+
+type State = {
+  cube: c.Cube,
+  mode: Mode,
+  scramble: [InverseElement, CanonicalAlg] | undefined,
+  solution: string | undefined,
+};
+
+type Action =
+  | { type: "SCRAMBLE", scramble: [InverseElement, CanonicalAlg] }
+  | { type: "MOVE", alg: c.Alg }
+  | { type: "SPACE" }
+  | { type: "ESCAPE" };
+
+const initialState: State = {
+  cube: new c.Cube(),
+  mode: "scramble",
+  scramble: undefined,
+  solution: undefined,
+};
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case "SCRAMBLE": {
+      return {
+        cube: newScrambleCube(action.scramble),
+        mode: "scrambled",
+        scramble: action.scramble,
+        solution: undefined,
+      };
+    }
+    case "MOVE": {
+      const cube = state.cube.clone().apply(action.alg);
+      return {
+        ...state,
+        cube,
+        mode: isSolved(cube) ? "solved" : "solving",
+        scramble: state.scramble,
+      };
+    }
+    case "SPACE": {
+      if (state.mode === "solved" || typeof state.mode === "object") {
+        return { ...state, mode: "scramble" };
+      }
+      if (state.mode === "scrambled") {
+        let solution = ""
+        switch (state.scramble?.[0].post_auf) {
+          case 1:
+            solution += "(U') ";
+            break;
+          case 2:
+            solution += "(U2) ";
+            break;
+          case 3:
+            solution += "(U) ";
+            break;
+        }
+        solution += state.scramble?.[1].alg;
+        return {
+          ...state,
+          solution,
+        };
+      }
+      if (state.mode === "solving") {
+        return {
+          ...state,
+          mode: "scrambled",
+          cube: newScrambleCube(state.scramble!),
+        };
+      }
+      return state;
+    }
+    case "ESCAPE": {
+      return {
+        ...state,
+        cube: newScrambleCube(state.scramble!),
+        mode: "scrambled",
+        solution: undefined,
+      };
+    }
+  }
+}
+
+const MOVE_KEYS: Record<string, string> = {
+  w: "B",
+  e: "L'",
+  i: "R",
+  o: "B'",
+  s: "D",
+  d: "L",
+  f: "U'",
+  g: "F'",
+  h: "F",
+  j: "U",
+  k: "R'",
+  l: "D'",
+  x: "M'",
+  ".": "M'",
+  "5": "M",
+  "6": "M",
+  u: "r",
+  m: "r'",
+};
 
 export function CubeRenderer() {
   const { mask } = useCaseSelection();
   const options = INVERSE_MAP
-    .map(v => v.filter(i => CANONICAL_ALGS[i.alg_id]?.two_gen));
+    // .map(v => v.filter(i => CANONICAL_ALGS[i.alg_id]?.two_gen));
   const pool = options.flatMap((group, i) => ((mask >> i) & 1) === 1 ? group : []);
 
-  const [mode, setMode] = useState<"scramble" | "scrambled" | "solving" | "solved">("scramble");
-  const currentAlg = useRef<c.Alg>(undefined);
-
-  const [cube, setCube] = useState<c.Cube>(() => new c.Cube());
-
-  const resetCube = () => {
-    console.log("reset");
-    let cube = new c.Cube()
-      .setMask(
-        c.Cube.allStickers()
-        .filter(([face, index]) => {
-          const m_slice = (index % 3) === 1;
-          const d_layer = index >= 3;
-          switch (face) {
-            case c.Face.U:
-              return false;
-            case c.Face.D:
-              return !m_slice;
-            case c.Face.L:
-              return d_layer;
-            case c.Face.B:
-              return d_layer && !m_slice;
-            case c.Face.F:
-              return !m_slice;
-            case c.Face.R:
-              return d_layer || index != 1;
-          }
-        })
-      );
-    if (currentAlg.current !== undefined) {
-      cube.apply(currentAlg.current);
-    }
-    console.log(currentAlg.current);
-    setCube(cube);
-  };
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    console.log("useeffect", mode);
-    if (mode === "scramble") {
-      currentAlg.current = getScramble(pool);
-      resetCube();
-      console.log("-> scrambled");
-      setMode("scrambled");
+    if (state.mode === "scramble") {
+      dispatch({ type: "SCRAMBLE", scramble: getScramble(pool) });
     }
-  }, [mode]);
-
-  const handleKeydown = useCallback((e: KeyboardEvent) => {
-    // TODO swap to keyCode
-    switch (e.key) {
-      case " ":
-        console.log("keydown", mode);
-        if (mode === "solved") {
-          setMode("scramble");
-        } else if (mode === "solving") {
-          // TODO reset cube
-        } else if (mode === "scrambled") {
-          console.log("3");
-          // TODO show solution and allow next
-        }
-        return;
-      case "w":
-        setCube(cube => cube.clone().apply(new c.Alg("B")));
-        break;
-      case "e":
-        setCube(cube => cube.clone().apply(new c.Alg("L'")));
-        break;
-      case "i":
-        setCube(cube => cube.clone().apply(new c.Alg("R")));
-        break;
-      case "o":
-        setCube(cube => cube.clone().apply(new c.Alg("B'")));
-        break;
-      case "s":
-        setCube(cube => cube.clone().apply(new c.Alg("D")));
-        break;
-      case "d":
-        setCube(cube => cube.clone().apply(new c.Alg("L")));
-        break;
-      case "f":
-        setCube(cube => cube.clone().apply(new c.Alg("U'")));
-        break;
-      case "g":
-        setCube(cube => cube.clone().apply(new c.Alg("F'")));
-        break;
-      case "h":
-        setCube(cube => cube.clone().apply(new c.Alg("F")));
-        break;
-      case "j":
-        setCube(cube => cube.clone().apply(new c.Alg("U")));
-        break;
-      case "k":
-        setCube(cube => cube.clone().apply(new c.Alg("R'")));
-        break;
-      case "l":
-        setCube(cube => cube.clone().apply(new c.Alg("D'")));
-        break;
-      case "x":
-        setCube(cube => cube.clone().apply(new c.Alg("M'")));
-        break;
-      case ".":
-        setCube(cube => cube.clone().apply(new c.Alg("M'")));
-        break;
-      case "5":
-        setCube(cube => cube.clone().apply(new c.Alg("M")));
-        break;
-      case "6":
-        setCube(cube => cube.clone().apply(new c.Alg("M")));
-        break;
-      case "u":
-        setCube(cube => cube.clone().apply(new c.Alg("r")));
-        break;
-      case "m":
-        setCube(cube => cube.clone().apply(new c.Alg("r'")));
-        break;
-      default:
-        return;
-    }
-    if (isSolved(cube)) {
-      setMode("solved");
-    } else {
-      setMode("solving");
-    }
-  }, [mode]);
+  }, [state.mode, pool]);
 
   useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        dispatch({ type: "ESCAPE" });
+        return;
+      }
+      if (e.key === " ") {
+        dispatch({ type: "SPACE" });
+        return;
+      }
+      const move = MOVE_KEYS[e.key];
+      if (move) {
+        dispatch({ type: "MOVE", alg: new c.Alg(move) });
+      }
+    };
     window.addEventListener("keydown", handleKeydown);
     return () => {
       window.removeEventListener("keydown", handleKeydown);
@@ -205,38 +237,38 @@ export function CubeRenderer() {
 
     { // back
       Array(3).keys().map(i =>
-        <Sticker face={cube.state["B"][i]!} x={52 + (2-i)*48} y={28} w={40} h={12} />
+        <Sticker face={state.cube.state[c.Face.B][i]!} x={52 + (2-i)*48} y={28} w={40} h={12} />
       )
     }
 
     { // left
       Array(3).keys().map(i =>
-        <Sticker face={cube.state["L"][i]!} x={28} y={52 + i*48} w={12} h={40} />
+        <Sticker face={state.cube.state[c.Face.L][i]!} x={28} y={52 + i*48} w={12} h={40} />
       )
     }
 
     { // right
       Array(3).keys().map(i =>
-        <Sticker face={cube.state["R"][i]!} x={200} y={52 + (2-i)*48} w={12} h={40} />
+        <Sticker face={state.cube.state[c.Face.R][i]!} x={200} y={52 + (2-i)*48} w={12} h={40} />
       )
     }
 
     { // front
       Array(3).keys().map(i =>
-        <Sticker face={cube.state["F"][i]!} x={52 + i*48} y={200} w={40} h={12} />
+        <Sticker face={state.cube.state[c.Face.F][i]!} x={52 + i*48} y={200} w={40} h={12} />
       )
     }
 
     { // up
       Array(3).keys().flatMap(i => {
         return Array(3).keys().map(j =>
-          <Sticker face={cube.state["U"][3*i+j]!} x={52 + j*48} y={52 + i*48} w={40} h={40} />
+          <Sticker face={state.cube.state[c.Face.U][3*i+j]!} x={52 + j*48} y={52 + i*48} w={40} h={40} />
         )
       })
     }
     </svg>
-    <div className={`${styles.status} ${mode === "solved" ? styles.solved : styles.unsolved}`}>
-      {mode === "solved" ? "Solved" : "Unsolved"}
+    <div className={`${styles.status} ${state.mode === "solved" ? styles.solved : styles.unsolved}`}>
+      {state.solution !== undefined ? state.solution : state.mode === "solved" ? "Solved" : "Unsolved"}
     </div>
   </div>;
 }
