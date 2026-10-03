@@ -398,10 +398,13 @@ export const INVERSE_MAP: InverseMap = CANONICAL_ALGS.flatMap(({ aufs }, alg_id)
       alg_id: alg_id,
     },
   ]),
-).reduce<InverseMap>((a, [g, e]) => {
-  if (a[g] === undefined) {
-    a[g] = [];
-  }
-  a[g].push(e);
-  return a;
-}, new Array(15));
+).reduce<InverseMap>(
+  (a, [g, e]) => {
+    if (a[g] === undefined) {
+      a[g] = [];
+    }
+    a[g].push(e);
+    return a;
+  },
+  Array.from({ length: 15 }),
+);

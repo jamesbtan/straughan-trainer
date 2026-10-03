@@ -1,5 +1,3 @@
-import { snapshot } from "solid-js";
-
 export enum Face {
   F = "F",
   B = "B",
@@ -306,36 +304,36 @@ export class Cube {
 
   constructor() {
     this.state = {
-      [Face.F]: [
-        ...Array(9)
+      [Face.F]: Array.from(
+        Array(9)
           .keys()
           .map(() => ({ face: Face.F, mask: false })),
-      ],
-      [Face.B]: [
-        ...Array(9)
+      ),
+      [Face.B]: Array.from(
+        Array(9)
           .keys()
           .map(() => ({ face: Face.B, mask: false })),
-      ],
-      [Face.L]: [
-        ...Array(9)
+      ),
+      [Face.L]: Array.from(
+        Array(9)
           .keys()
           .map(() => ({ face: Face.L, mask: false })),
-      ],
-      [Face.R]: [
-        ...Array(9)
+      ),
+      [Face.R]: Array.from(
+        Array(9)
           .keys()
           .map(() => ({ face: Face.R, mask: false })),
-      ],
-      [Face.U]: [
-        ...Array(9)
+      ),
+      [Face.U]: Array.from(
+        Array(9)
           .keys()
           .map(() => ({ face: Face.U, mask: false })),
-      ],
-      [Face.D]: [
-        ...Array(9)
+      ),
+      [Face.D]: Array.from(
+        Array(9)
           .keys()
           .map(() => ({ face: Face.D, mask: false })),
-      ],
+      ),
     };
   }
 
@@ -497,11 +495,13 @@ export class Cube {
   }
 
   static allStickers(): Sticker[] {
-    return Object.values(Face).flatMap((f) => [
-      ...Array(9)
-        .keys()
-        .map((i) => [f, i] as Sticker),
-    ]);
+    return Object.values(Face).flatMap((f) =>
+      Array.from(
+        Array(9)
+          .keys()
+          .map((i) => [f, i] as Sticker),
+      ),
+    );
   }
 
   maskAll(): this {

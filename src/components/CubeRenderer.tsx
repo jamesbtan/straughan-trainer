@@ -1,4 +1,4 @@
-import { CANONICAL_ALGS, INVERSE_MAP, type InverseElement } from "../data/algs";
+import { CANONICAL_ALGS, INVERSE_MAP } from "../data/algs";
 
 import styles from "./CubeRenderer.module.css";
 import * as c from "./Cube";
@@ -28,16 +28,20 @@ function Sticker(props: StickerProps) {
       y={props.y}
       width={props.w}
       height={props.h}
-      class={`${styles.facelet!} ${props.face.mask ? colors[props.face.face]! : styles.c_dim!}`}
+      class={[
+        styles.facelet,
+        {
+          [colors[props.face.face]!]: props.face.mask,
+          [styles.c_dim!]: !props.face.mask,
+        },
+      ]}
     />
   );
 }
 
 export function CubeRenderer() {
-  const options = INVERSE_MAP.map((v, k): InverseElement[] => {
-    return v.filter((i) => CANONICAL_ALGS[i.alg_id]!.two_gen);
-  });
-  const probs: number[] = new Array(options.length + 1);
+  const options = INVERSE_MAP.map((v) => v.filter((i) => CANONICAL_ALGS[i.alg_id]!.two_gen));
+  const probs: number[] = Array.from({ length: options.length + 1 });
   probs[0] = 0;
   for (let i = 1; i <= options.length; i++) {
     probs[i] = probs[i - 1]! + options[i - 1]!.length;
