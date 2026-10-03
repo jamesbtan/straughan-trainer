@@ -1,3 +1,5 @@
+import { snapshot } from "solid-js";
+
 export enum Face {
   F = "F",
   B = "B",
@@ -5,24 +7,24 @@ export enum Face {
   R = "R",
   U = "U",
   D = "D",
-};
+}
 export enum Rotation {
   x = "x",
   y = "y",
   z = "z",
-};
+}
 export enum Slice {
   M = "M",
   E = "E",
   S = "S",
-};
+}
 
 type Move = [Face | Rotation, 1 | 2 | 3];
 type Sticker = [Face, number];
 
 export type MaskedFace = {
-  face: Face,
-  mask: boolean,
+  face: Face;
+  mask: boolean;
 };
 
 function isFace(value: string | undefined): value is Face {
@@ -36,37 +38,133 @@ function isRotation(value: string | undefined): value is Rotation {
 }
 
 const faceToCycles: Record<Face, Sticker[][]> = {
-  [Face.F]: [ // U(678) -> R(036) -> D(210) -> L(852)
-    [[Face.U, 6], [Face.R, 0], [Face.D, 2], [Face.L, 8]],
-    [[Face.U, 7], [Face.R, 3], [Face.D, 1], [Face.L, 5]],
-    [[Face.U, 8], [Face.R, 6], [Face.D, 0], [Face.L, 2]],
+  [Face.F]: [
+    // U(678) -> R(036) -> D(210) -> L(852)
+    [
+      [Face.U, 6],
+      [Face.R, 0],
+      [Face.D, 2],
+      [Face.L, 8],
+    ],
+    [
+      [Face.U, 7],
+      [Face.R, 3],
+      [Face.D, 1],
+      [Face.L, 5],
+    ],
+    [
+      [Face.U, 8],
+      [Face.R, 6],
+      [Face.D, 0],
+      [Face.L, 2],
+    ],
   ],
-  [Face.B]: [ // U(012) -> L(630) -> D(876) -> R(258)
-    [[Face.U, 0], [Face.L, 6], [Face.D, 8], [Face.R, 2]],
-    [[Face.U, 1], [Face.L, 3], [Face.D, 7], [Face.R, 5]],
-    [[Face.U, 2], [Face.L, 0], [Face.D, 6], [Face.R, 8]],
+  [Face.B]: [
+    // U(012) -> L(630) -> D(876) -> R(258)
+    [
+      [Face.U, 0],
+      [Face.L, 6],
+      [Face.D, 8],
+      [Face.R, 2],
+    ],
+    [
+      [Face.U, 1],
+      [Face.L, 3],
+      [Face.D, 7],
+      [Face.R, 5],
+    ],
+    [
+      [Face.U, 2],
+      [Face.L, 0],
+      [Face.D, 6],
+      [Face.R, 8],
+    ],
   ],
-  [Face.L]: [ // U(036) -> F(036) -> D(036) -> B(852)
-    [[Face.U, 0], [Face.F, 0], [Face.D, 0], [Face.B, 8]],
-    [[Face.U, 3], [Face.F, 3], [Face.D, 3], [Face.B, 5]],
-    [[Face.U, 6], [Face.F, 6], [Face.D, 6], [Face.B, 2]],
+  [Face.L]: [
+    // U(036) -> F(036) -> D(036) -> B(852)
+    [
+      [Face.U, 0],
+      [Face.F, 0],
+      [Face.D, 0],
+      [Face.B, 8],
+    ],
+    [
+      [Face.U, 3],
+      [Face.F, 3],
+      [Face.D, 3],
+      [Face.B, 5],
+    ],
+    [
+      [Face.U, 6],
+      [Face.F, 6],
+      [Face.D, 6],
+      [Face.B, 2],
+    ],
   ],
-  [Face.R]: [ // U(258) -> B(630) -> D(258) -> F(258)
-    [[Face.U, 2], [Face.B, 6], [Face.D, 2], [Face.F, 2]],
-    [[Face.U, 5], [Face.B, 3], [Face.D, 5], [Face.F, 5]],
-    [[Face.U, 8], [Face.B, 0], [Face.D, 8], [Face.F, 8]],
+  [Face.R]: [
+    // U(258) -> B(630) -> D(258) -> F(258)
+    [
+      [Face.U, 2],
+      [Face.B, 6],
+      [Face.D, 2],
+      [Face.F, 2],
+    ],
+    [
+      [Face.U, 5],
+      [Face.B, 3],
+      [Face.D, 5],
+      [Face.F, 5],
+    ],
+    [
+      [Face.U, 8],
+      [Face.B, 0],
+      [Face.D, 8],
+      [Face.F, 8],
+    ],
   ],
-  [Face.U]: [ // B(012) -> R(012) -> F(012) -> L(012)
-    [[Face.B, 0], [Face.R, 0], [Face.F, 0], [Face.L, 0]],
-    [[Face.B, 1], [Face.R, 1], [Face.F, 1], [Face.L, 1]],
-    [[Face.B, 2], [Face.R, 2], [Face.F, 2], [Face.L, 2]],
+  [Face.U]: [
+    // B(012) -> R(012) -> F(012) -> L(012)
+    [
+      [Face.B, 0],
+      [Face.R, 0],
+      [Face.F, 0],
+      [Face.L, 0],
+    ],
+    [
+      [Face.B, 1],
+      [Face.R, 1],
+      [Face.F, 1],
+      [Face.L, 1],
+    ],
+    [
+      [Face.B, 2],
+      [Face.R, 2],
+      [Face.F, 2],
+      [Face.L, 2],
+    ],
   ],
-  [Face.D]: [ // B(678) -> L(678) -> F(678) -> R(678)
-    [[Face.B, 6], [Face.L, 6], [Face.F, 6], [Face.R, 6]],
-    [[Face.B, 7], [Face.L, 7], [Face.F, 7], [Face.R, 7]],
-    [[Face.B, 8], [Face.L, 8], [Face.F, 8], [Face.R, 8]],
+  [Face.D]: [
+    // B(678) -> L(678) -> F(678) -> R(678)
+    [
+      [Face.B, 6],
+      [Face.L, 6],
+      [Face.F, 6],
+      [Face.R, 6],
+    ],
+    [
+      [Face.B, 7],
+      [Face.L, 7],
+      [Face.F, 7],
+      [Face.R, 7],
+    ],
+    [
+      [Face.B, 8],
+      [Face.L, 8],
+      [Face.F, 8],
+      [Face.R, 8],
+    ],
   ],
-}
+};
 
 const rotationToCycle: Record<Rotation, Face[]> = {
   [Rotation.x]: [Face.U, Face.B, Face.D, Face.F],
@@ -113,35 +211,65 @@ const faceToFace: Record<Face, Partial<Record<Face, number[]>>> = {
     [Face.L]: [2, 5, 8, 1, 4, 7, 0, 3, 6],
     [Face.R]: [6, 3, 0, 7, 4, 1, 8, 5, 2],
   },
-}
+};
 
 const rotationToWings: Record<Rotation, Face[]> = {
   [Rotation.x]: [Face.R, Face.L],
   [Rotation.y]: [Face.U, Face.D],
   [Rotation.z]: [Face.F, Face.B],
-}
+};
 
 const wide: Record<Face, Move[]> = {
-  [Face.F]: [[Face.B, 1], [Rotation.z, 1]],
-  [Face.B]: [[Face.F, 1], [Rotation.z, 3]],
-  [Face.L]: [[Face.R, 1], [Rotation.x, 3]],
-  [Face.R]: [[Face.L, 1], [Rotation.x, 1]],
-  [Face.U]: [[Face.D, 1], [Rotation.y, 1]],
-  [Face.D]: [[Face.U, 1], [Rotation.y, 3]],
-}
+  [Face.F]: [
+    [Face.B, 1],
+    [Rotation.z, 1],
+  ],
+  [Face.B]: [
+    [Face.F, 1],
+    [Rotation.z, 3],
+  ],
+  [Face.L]: [
+    [Face.R, 1],
+    [Rotation.x, 3],
+  ],
+  [Face.R]: [
+    [Face.L, 1],
+    [Rotation.x, 1],
+  ],
+  [Face.U]: [
+    [Face.D, 1],
+    [Rotation.y, 1],
+  ],
+  [Face.D]: [
+    [Face.U, 1],
+    [Rotation.y, 3],
+  ],
+};
 
 const slice: Record<Slice, Move[]> = {
-  [Slice.S]: [[Face.F, 3], [Face.B, 1], [Rotation.z, 1]],
-  [Slice.E]: [[Face.U, 3], [Face.D, 1], [Rotation.y, 1]],
-  [Slice.M]: [[Face.R, 1], [Face.L, 3], [Rotation.x, 3]],
-}
+  [Slice.S]: [
+    [Face.F, 3],
+    [Face.B, 1],
+    [Rotation.z, 1],
+  ],
+  [Slice.E]: [
+    [Face.U, 3],
+    [Face.D, 1],
+    [Rotation.y, 1],
+  ],
+  [Slice.M]: [
+    [Face.R, 1],
+    [Face.L, 3],
+    [Rotation.x, 3],
+  ],
+};
 
 function mult(r: Move, x: number): Move {
   const clone: Move = [...r];
   clone[1] *= x;
   clone[1] %= 4;
   return clone;
-};
+}
 
 function stringToMoves(move: string): Move[] {
   if (move.length == 0) {
@@ -166,9 +294,9 @@ function stringToMoves(move: string): Move[] {
   switch (move.substring(1)) {
     case "2":
     case "2'":
-      return result.map(r => mult(r, 2));
+      return result.map((r) => mult(r, 2));
     case "'":
-      return result.map(r => mult(r, 3));
+      return result.map((r) => mult(r, 3));
     default:
       throw new Error("Invalid turn");
   }
@@ -178,12 +306,36 @@ export class Cube {
 
   constructor() {
     this.state = {
-      [Face.F]: [...Array(9).keys().map(() => ({"face": Face.F, "mask": false}))],
-      [Face.B]: [...Array(9).keys().map(() => ({"face": Face.B, "mask": false}))],
-      [Face.L]: [...Array(9).keys().map(() => ({"face": Face.L, "mask": false}))],
-      [Face.R]: [...Array(9).keys().map(() => ({"face": Face.R, "mask": false}))],
-      [Face.U]: [...Array(9).keys().map(() => ({"face": Face.U, "mask": false}))],
-      [Face.D]: [...Array(9).keys().map(() => ({"face": Face.D, "mask": false}))],
+      [Face.F]: [
+        ...Array(9)
+          .keys()
+          .map(() => ({ face: Face.F, mask: false })),
+      ],
+      [Face.B]: [
+        ...Array(9)
+          .keys()
+          .map(() => ({ face: Face.B, mask: false })),
+      ],
+      [Face.L]: [
+        ...Array(9)
+          .keys()
+          .map(() => ({ face: Face.L, mask: false })),
+      ],
+      [Face.R]: [
+        ...Array(9)
+          .keys()
+          .map(() => ({ face: Face.R, mask: false })),
+      ],
+      [Face.U]: [
+        ...Array(9)
+          .keys()
+          .map(() => ({ face: Face.U, mask: false })),
+      ],
+      [Face.D]: [
+        ...Array(9)
+          .keys()
+          .map(() => ({ face: Face.D, mask: false })),
+      ],
     };
   }
 
@@ -198,7 +350,7 @@ export class Cube {
     let simpl = moves.flatMap(stringToMoves);
     if (inverse) {
       simpl.reverse();
-      simpl = simpl.map(m => mult(m, 3));
+      simpl = simpl.map((m) => mult(m, 3));
     }
     for (const [initial, turns] of simpl) {
       if (isRotation(initial)) {
@@ -210,20 +362,20 @@ export class Cube {
     return this;
   }
 
-
   private stickerCycle(cycle: Sticker[], inverse: boolean) {
     const key = cycle[0];
     if (key === undefined) {
       throw new Error("Cycle was empty");
     }
-    const [oface, oindex] = key;
-    let buf = this.state[oface][oindex]!;
+    let { face: oface, mask: omask } = this.state[key[0]][key[1]]!;
     const swap = (i: number) => {
       const [face, index] = cycle[i]!;
-      const tmp = this.state[face][index]!;
-      this.state[face][index] = buf;
-      buf = tmp;
-    }
+      const { face: tface, mask: tmask } = this.state[face][index]!;
+      this.state[face][index].face = oface;
+      this.state[face][index].mask = omask;
+      oface = tface;
+      omask = tmask;
+    };
     if (inverse) {
       for (let i = 1; i < cycle.length; i++) {
         swap(cycle.length - i);
@@ -233,7 +385,8 @@ export class Cube {
         swap(i);
       }
     }
-    this.state[oface][oindex] = buf;
+    this.state[key[0]][key[1]].face = oface;
+    this.state[key[0]][key[1]].mask = omask;
   }
 
   private innerCycle(face: Face, inverse: boolean) {
@@ -246,7 +399,7 @@ export class Cube {
     // 8 5 2
     // Face [0,2,8,6] [1,5,7,3]
     function helper(i: number): Sticker {
-      return [face, i]
+      return [face, i];
     }
     const corners = [0, 2, 8, 6].map(helper);
     const edges = [1, 5, 7, 3].map(helper);
@@ -344,9 +497,11 @@ export class Cube {
   }
 
   static allStickers(): Sticker[] {
-    return Object.values(Face).flatMap(f =>
-      [...Array(9).keys().map(i => [f, i] as Sticker)]
-    );
+    return Object.values(Face).flatMap((f) => [
+      ...Array(9)
+        .keys()
+        .map((i) => [f, i] as Sticker),
+    ]);
   }
 
   maskAll(): this {

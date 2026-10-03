@@ -1,15 +1,16 @@
-import { AlgSelector } from "./AlgSelector";
-import { CubeRenderer } from "./CubeRenderer";
-import "./index.css";
+import { Title } from "@solidjs/meta";
+import { Loading } from "solid-js";
+import { Router } from "./router";
 
-export function App() {
+export default function App() {
   return (
-    <div className="app">
-      <h1>Straughan</h1>
-      <AlgSelector />
-      <CubeRenderer />
-    </div>
+    <Router>
+      {(props) => (
+        <>
+          <Title>Solid App</Title>
+          <Loading fallback={<main>Loading…</main>}>{props.children}</Loading>
+        </>
+      )}
+    </Router>
   );
 }
-
-export default App;

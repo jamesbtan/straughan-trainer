@@ -1,24 +1,35 @@
 {
-  "name": "bun-react-template",
-  "version": "0.1.0",
+  "name": "example-basic",
+  "version": "0.0.0",
+  "description": "",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "test": "vitest",
+    "lint": "oxlint src",
+    "fmt": "oxfmt src"
+  },
   "dependencies": {
-    "react": "^19",
-    "react-dom": "^19"
+    "@solidjs/meta": "^1.0.0-next.2",
+    "@solidjs/router": "^2.0.0-next.31",
+    "@solidjs/web": "^2.0.0-rc.11",
+    "solid-js": "^2.0.0-rc.11"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/bun": "latest",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^10.10.0",
-    "typescript-eslint": "^8.70.0"
-  },
-  "private": true,
-  "scripts": {
-    "dev": "bun --hot src/index.ts",
-    "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
-    "start": "NODE_ENV=production bun src/index.ts",
-    "lint": "eslint ."
-  },
-  "type": "module"
+    "@solidjs/diagnostics": "^2.0.0-rc.11",
+    "@solidjs/testing-library": "^1.0.0-beta.3",
+    "@solidjs/vite-plugin": "^3.0.0-next.46",
+    "@testing-library/jest-dom": "^7.0.0",
+    "eslint-plugin-solid": "~0.18.0",
+    "filesystem-routing": "0.4.0",
+    "jsdom": "^25.0.1",
+    "oxfmt": "^0.71.0",
+    "oxlint": "~1.79.0",
+    "typescript": "^5.9.2",
+    "vite": "^8.1.5",
+    "vitest": "^5.0.0"
+  }
 }

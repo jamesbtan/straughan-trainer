@@ -16,12 +16,11 @@ export function AlgSelector() {
     "S",
     "Z",
   ];
-  const inputs = cases.map(
-    (title, i) =>
+  const inputs = cases.map((title, i) => (
     <div>
-      <input name={`${i}`} id={`${i}`} type="checkbox"/>
-      <label htmlFor={`${i}`}>{title}</label>
+      <input name={`${i}`} id={`${i}`} type="checkbox" />
+      <label for={`${i}`}>{title}</label>
     </div>
-  );
+  ));
   return <div>{inputs}</div>;
 }
