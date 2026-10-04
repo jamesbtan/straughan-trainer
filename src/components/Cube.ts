@@ -301,46 +301,42 @@ function stringToMoves(move: string): Move[] {
 }
 export class Cube {
   state: Record<Face, MaskedFace[]>;
+  solved: boolean;
 
   constructor() {
-    this.state = {
-      [Face.F]: Array.from(
+    this.state = Object.fromEntries(
+      Object.values(Face).map((face) => [
+        face,
         Array(9)
           .keys()
-          .map(() => ({ face: Face.F, mask: false })),
-      ),
-      [Face.B]: Array.from(
-        Array(9)
-          .keys()
-          .map(() => ({ face: Face.B, mask: false })),
-      ),
-      [Face.L]: Array.from(
-        Array(9)
-          .keys()
-          .map(() => ({ face: Face.L, mask: false })),
-      ),
-      [Face.R]: Array.from(
-        Array(9)
-          .keys()
-          .map(() => ({ face: Face.R, mask: false })),
-      ),
-      [Face.U]: Array.from(
-        Array(9)
-          .keys()
-          .map(() => ({ face: Face.U, mask: false })),
-      ),
-      [Face.D]: Array.from(
-        Array(9)
-          .keys()
-          .map(() => ({ face: Face.D, mask: false })),
-      ),
-    };
+          .map(() => ({ face, mask: false }))
+          .toArray(),
+      ]),
+    ) as Record<Face, MaskedFace[]>;
+    this.solved = true;
   }
 
-  clone(): Cube {
-    const c = Object.create(Object.getPrototypeOf(this) as object) as Cube;
-    c.state = this.state;
-    return c;
+  setSolved(): Cube {
+    for (const face of Object.values(Face)) {
+      for (let i = 0; i < 9; i++) {
+        this.state[face][i].face = face;
+        this.state[face][i].mask = false;
+      }
+    }
+    this.solved = true;
+    return this;
+  }
+
+  private isSolved(): boolean {
+    for (const i of [0, 2, 6, 8]) {
+      if (this.state.U[i].face !== Face.U) return false;
+    }
+    for (const face of [Face.L, Face.F, Face.R, Face.B]) {
+      if (this.state[face][0].face !== this.state[face][2].face) {
+        return false;
+      }
+    }
+    return true;
   }
 
   alg(movesStr: string, inverse: boolean = false): this {
@@ -428,6 +424,7 @@ export class Cube {
     for (let i = 0; i < turns; i++) {
       this._turnFace(face, inverse);
     }
+    this.solved = this.isSolved();
     return this;
   }
 
@@ -496,11 +493,10 @@ export class Cube {
 
   static allStickers(): Sticker[] {
     return Object.values(Face).flatMap((f) =>
-      Array.from(
-        Array(9)
-          .keys()
-          .map((i) => [f, i] as Sticker),
-      ),
+      Array(9)
+        .keys()
+        .map((i) => [f, i] as Sticker)
+        .toArray(),
     );
   }
 

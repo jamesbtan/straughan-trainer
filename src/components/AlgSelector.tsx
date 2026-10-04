@@ -1,5 +1,5 @@
 import { useSearchParams } from "@solidjs/router";
-import { createEffect, For, Show } from "solid-js";
+import { For, Show } from "solid-js";
 
 const cases = [
   "headlights",
@@ -20,34 +20,45 @@ const cases = [
 ];
 const ALL_MASK = (1 << cases.length) - 1;
 
-function enabled(mask: number, i: number): boolean {
-  return !!((mask >> i) & 1);
-}
-
 function toggle(mask: number, i: number): number {
   return mask ^ (1 << i);
 }
 
-export function useMask(): [() => number, (mask: number) => void] {
+export function enabled(mask: number, i: number): boolean {
+  return ((mask >> i) & 1) === 1;
+}
+
+type Filter = {
+  mask: () => number;
+  setMask: (mask: number) => void;
+  twoGen: () => boolean;
+  setTwoGen: (twoGen: boolean) => void;
+};
+
+export function useFilters(): Filter {
   const [searchParams, setSearchParams] = useSearchParams();
-  const mask = () => Number(searchParams.algs);
   const setMask = (mask: number) => {
     setSearchParams({ algs: mask }, { replace: true });
   };
-  return [mask, setMask];
+  const mask = () => {
+    let mask = Number(searchParams.algs);
+    if (Number.isNaN(mask) || mask < 0 || mask > ALL_MASK) {
+      setMask(ALL_MASK);
+      return ALL_MASK;
+    }
+    return mask;
+  };
+  const setTwoGen = (twoGen: boolean) => {
+    setSearchParams({ two_gen: twoGen }, { replace: true });
+  };
+  const twoGen = () => {
+    return searchParams.two_gen === "true";
+  };
+  return { mask, setMask, twoGen, setTwoGen };
 }
 
 export function AlgSelector() {
-  const [mask, setMask] = useMask();
-
-  createEffect(
-    () => mask(),
-    (mask) => {
-      if (Number.isNaN(mask) || mask < 0 || mask > ALL_MASK) {
-        setMask(ALL_MASK);
-      }
-    },
-  );
+  const { mask, setMask, twoGen, setTwoGen } = useFilters();
 
   return (
     <details>
@@ -61,14 +72,23 @@ export function AlgSelector() {
             <input
               checked={enabled(mask(), i())}
               onChange={() => setMask(toggle(mask(), i()))}
-              name={`${i()}`}
-              id={`${i()}`}
+              name={`algfilter-${i()}`}
+              id={`algfilter-${i()}`}
               type="checkbox"
             />
-            <label for={`${i()}`}>{title}</label>
+            <label for={`algfilter-${i()}`}>{title}</label>
           </div>
         )}
       </For>
+      <hr />
+      <input
+        checked={twoGen()}
+        onChange={() => setTwoGen(!twoGen())}
+        type="checkbox"
+        name="two-gen"
+        id="two-gen"
+      />
+      <label for="two-gen">2-gen only</label>
     </details>
   );
 }

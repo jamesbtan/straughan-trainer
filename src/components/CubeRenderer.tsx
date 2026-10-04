@@ -1,20 +1,19 @@
-import { CANONICAL_ALGS, INVERSE_MAP } from "../data/algs";
-
 import styles from "./CubeRenderer.module.css";
-import * as c from "./Cube";
-import { createStore, onSettled, Repeat } from "solid-js";
+import { Face, MaskedFace } from "./Cube";
+import { onSettled, Repeat } from "solid-js";
+import { useCube } from "../hooks/useCube";
 
 const colors = {
-  [c.Face.F]: styles.c_blue,
-  [c.Face.B]: styles.c_green,
-  [c.Face.L]: styles.c_orange,
-  [c.Face.R]: styles.c_red,
-  [c.Face.U]: styles.c_yellow,
-  [c.Face.D]: styles.c_white,
+  [Face.F]: styles.c_blue,
+  [Face.B]: styles.c_green,
+  [Face.L]: styles.c_orange,
+  [Face.R]: styles.c_red,
+  [Face.U]: styles.c_yellow,
+  [Face.D]: styles.c_white,
 };
 
 type StickerProps = {
-  face: c.MaskedFace;
+  face: MaskedFace;
   x: number;
   y: number;
   w: number;
@@ -40,112 +39,101 @@ function Sticker(props: StickerProps) {
 }
 
 export function CubeRenderer() {
-  const options = INVERSE_MAP.map((v) => v.filter((i) => CANONICAL_ALGS[i.alg_id]!.two_gen));
-  const probs: number[] = Array.from({ length: options.length + 1 });
-  probs[0] = 0;
-  for (let i = 1; i <= options.length; i++) {
-    probs[i] = probs[i - 1]! + options[i - 1]!.length;
-  }
-
-  const rng = Math.floor(Math.random() * probs[probs.length - 1]!);
-  let alg_group;
-  let group_id;
-  for (let i = 1; i <= probs.length; i++) {
-    if (rng < probs[i]!) {
-      alg_group = i - 1;
-      group_id = rng - probs[i - 1]!;
-      break;
-    }
-  }
-
-  const metadata = options[alg_group!]![group_id!]!;
-  const alg = CANONICAL_ALGS[metadata.alg_id]!.alg;
-  const [cube, setCube] = createStore(
-    new c.Cube()
-      .setMask(
-        c.Cube.allStickers().filter(([face, index]) => {
-          const m_slice = index % 3 === 1;
-          const d_layer = index >= 3;
-          switch (face) {
-            case c.Face.U:
-              return false;
-            case c.Face.D:
-              return !m_slice;
-            case c.Face.L:
-              return d_layer;
-            case c.Face.B:
-              return d_layer && !m_slice;
-            case c.Face.F:
-              return !m_slice;
-            case c.Face.R:
-              return d_layer || index != 1;
-          }
-        }),
-      )
-      .turnFace(c.Face.U, metadata.pre_auf)
-      .alg(alg, true)
-      .turnFace(c.Face.U, metadata.post_auf),
-    // .alg("z")
-    // .maskAll()
-  );
+  const [cube, setCube] = useCube();
 
   const handleKeydown = (e: KeyboardEvent) => {
     // console.log(e);
     // TODO swap to keyCode
     switch (e.key) {
       case "w":
-        setCube((cube) => cube.alg("B"));
+        setCube((d) => {
+          d.alg("B");
+        });
         return;
       case "e":
-        setCube((cube) => cube.alg("L'"));
+        setCube((d) => {
+          d.alg("L'");
+        });
         return;
       case "i":
-        setCube((cube) => cube.alg("R"));
+        setCube((d) => {
+          d.alg("R");
+        });
         return;
       case "o":
-        setCube((cube) => cube.alg("B'"));
+        setCube((d) => {
+          d.alg("B'");
+        });
         return;
       case "s":
-        setCube((cube) => cube.alg("D"));
+        setCube((d) => {
+          d.alg("D");
+        });
         return;
       case "d":
-        setCube((cube) => cube.alg("L"));
+        setCube((d) => {
+          d.alg("L");
+        });
         return;
       case "f":
-        setCube((cube) => cube.alg("U'"));
+        setCube((d) => {
+          d.alg("U'");
+        });
         return;
       case "g":
-        setCube((cube) => cube.alg("F'"));
+        setCube((d) => {
+          d.alg("F'");
+        });
         return;
       case "h":
-        setCube((cube) => cube.alg("F"));
+        setCube((d) => {
+          d.alg("F");
+        });
         return;
       case "j":
-        setCube((cube) => cube.alg("U"));
+        setCube((d) => {
+          d.alg("U");
+        });
         return;
       case "k":
-        setCube((cube) => cube.alg("R'"));
+        setCube((d) => {
+          d.alg("R'");
+        });
         return;
       case "l":
-        setCube((cube) => cube.alg("D'"));
+        setCube((d) => {
+          d.alg("D'");
+        });
         return;
       case "x":
-        setCube((cube) => cube.alg("M'"));
+        setCube((d) => {
+          d.alg("M'");
+        });
         return;
       case ".":
-        setCube((cube) => cube.alg("M'"));
+        setCube((d) => {
+          d.alg("M'");
+        });
         return;
       case "5":
-        setCube((cube) => cube.alg("M"));
+        setCube((d) => {
+          d.alg("M");
+        });
         return;
       case "6":
-        setCube((cube) => cube.alg("M"));
+        setCube((d) => {
+          d.alg("M");
+        });
         return;
       case "u":
-        setCube((cube) => cube.alg("r"));
+        setCube((d) => {
+          d.alg("r");
+        });
         return;
       case "m":
-        setCube((cube) => cube.alg("r'"));
+        setCube((d) => {
+          d.alg("r'");
+        });
         return;
     }
   };
