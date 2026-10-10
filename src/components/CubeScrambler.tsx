@@ -1,4 +1,4 @@
-import { createEffect } from "solid-js";
+import { createEffect, createSignal } from "solid-js";
 import { useCube } from "../hooks/useCube";
 import { Cube, Face } from "../types/Cube";
 import { CANONICAL_ALGS, INVERSE_MAP, InverseElement } from "../data/algs";
@@ -52,6 +52,7 @@ const F2B_W_STRAUGHAN = Cube.allStickers().filter(([face, index]) => {
 
 export function CubeScrambler() {
   const [, setCube] = useCube();
+  const [alg, setAlg] = createSignal<Alg>();
 
   const filters = useFilters();
 
@@ -74,7 +75,11 @@ export function CubeScrambler() {
   };
 
   const scramble = (scrambler: () => Alg | undefined) => {
-    let alg: Alg | undefined = scrambler?.();
+    let alg: Alg | undefined = undefined;
+    setAlg(() => {
+      alg = scrambler?.();
+      return alg;
+    });
     setCube((d) => {
       let cube = d.setSolved();
       if (alg === undefined) {
@@ -90,13 +95,20 @@ export function CubeScrambler() {
     (scrambler) => scramble(scrambler),
   );
 
+  const reset = () => {
+    const scramble = alg();
+    setCube((d) => {
+      d.setSolved().setMask(F2B_W_STRAUGHAN);
+      if (scramble !== undefined) {
+        d.apply(scramble);
+      }
+    });
+  };
+
   return (
-    <button
-      onClick={() => {
-        scramble(scrambler());
-      }}
-    >
-      Scramble
-    </button>
+    <>
+      <button onClick={() => scramble(scrambler())}>Scramble</button>
+      <button onClick={() => reset()}>Reset</button>
+    </>
   );
 }
