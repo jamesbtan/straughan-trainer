@@ -1,10 +1,11 @@
 import { createEffect } from "solid-js";
 import { useCube } from "../hooks/useCube";
-import { Cube, Face } from "./Cube";
+import { Cube, Face } from "../types/Cube";
 import { CANONICAL_ALGS, INVERSE_MAP, InverseElement } from "../data/algs";
 import { enabled, useFilters } from "./AlgSelector";
+import { Alg } from "../types/Alg";
 
-function scramble(cube: Cube, options: InverseElement[][]) {
+function getScramble(options: InverseElement[][]): Alg {
   const probs: number[] = Array.from({ length: options.length + 1 });
   probs[0] = 0;
   for (let i = 1; i <= options.length; i++) {
@@ -25,36 +26,29 @@ function scramble(cube: Cube, options: InverseElement[][]) {
   }
 
   const metadata = options[alg_group!][group_id!];
-  const alg = CANONICAL_ALGS[metadata.alg_id].alg;
-
-  cube
-    .setSolved()
-    .setMask(
-      Cube.allStickers().filter(([face, index]) => {
-        const m_slice = index % 3 === 1;
-        const d_layer = index >= 3;
-        switch (face) {
-          case Face.U:
-            return false;
-          case Face.D:
-            return !m_slice;
-          case Face.L:
-            return d_layer;
-          case Face.B:
-            return d_layer && !m_slice;
-          case Face.F:
-            return !m_slice;
-          case Face.R:
-            return d_layer || index != 1;
-        }
-      }),
-    )
-    .turnFace(Face.U, metadata.pre_auf)
-    .alg(alg, true)
-    .turnFace(Face.U, metadata.post_auf);
-  // .alg("z")
-  // .maskAll();
+  return Alg.fromMoves([[Face.U, metadata.pre_auf]])
+    .andThen(new Alg(CANONICAL_ALGS[metadata.alg_id].alg).invert().moves)
+    .andThen([[Face.U, metadata.post_auf]]);
 }
+
+const F2B_W_STRAUGHAN = Cube.allStickers().filter(([face, index]) => {
+  const m_slice = index % 3 === 1;
+  const d_layer = index >= 3;
+  switch (face) {
+    case Face.U:
+      return false;
+    case Face.D:
+      return !m_slice;
+    case Face.L:
+      return d_layer;
+    case Face.B:
+      return d_layer && !m_slice;
+    case Face.F:
+      return !m_slice;
+    case Face.R:
+      return d_layer || index != 1;
+  }
+});
 
 export function CubeScrambler() {
   const [, setCube] = useCube();
@@ -64,9 +58,8 @@ export function CubeScrambler() {
   const scrambler = () => {
     const mask = filters.mask();
     const twoGen = filters.twoGen();
-    return (cube: Cube) => {
-      cube.setSolved();
-      if (mask === 0) return;
+    return () => {
+      if (mask === 0) return undefined;
 
       const options = INVERSE_MAP.map((v, index) =>
         !enabled(mask, index)
@@ -76,32 +69,31 @@ export function CubeScrambler() {
             : v,
       );
 
-      scramble(cube, options);
+      return getScramble(options);
     };
   };
 
+  const scramble = (scrambler: () => Alg | undefined) => {
+    let alg: Alg | undefined = scrambler?.();
+    setCube((d) => {
+      let cube = d.setSolved();
+      if (alg === undefined) {
+        return cube;
+      }
+      cube.setMask(F2B_W_STRAUGHAN).apply(alg);
+    });
+  };
+
   // TODO refactor create effect
-  // I think eventually what will happen
-  // Scrambler in one context+store (or I guess can just be a signal)
-  // Cube in another NESTED context+store
-  // This allows to reset the cube in a way that let's us preserve current
-  // signal OR advance to a new scramble
-  // so it goes like cube is derived from scrambler
-  // scrambler is derived for params
-  // so when params update the scrambler updates, which creates a new cube
-  // or we can have the scrambler stay the same and a new cube is made
-  // since they are separate layers
   createEffect(
     () => scrambler(),
-    (scrambler) => {
-      setCube((d) => scrambler(d));
-    },
+    (scrambler) => scramble(scrambler),
   );
 
   return (
     <button
       onClick={() => {
-        setCube((d) => scrambler()(d));
+        scramble(scrambler());
       }}
     >
       Scramble

@@ -1,4 +1,4 @@
-import { Cube } from "../components/Cube";
+import { Cube } from "../types/Cube";
 import { createStore, ParentProps, useContext } from "solid-js";
 import { createContext } from "solid-js";
 

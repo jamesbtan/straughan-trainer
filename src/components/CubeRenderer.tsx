@@ -1,7 +1,8 @@
 import styles from "./CubeRenderer.module.css";
-import { Face, MaskedFace } from "./Cube";
+import { Face, MaskedFace } from "../types/Cube";
 import { onSettled, Repeat } from "solid-js";
 import { useCube } from "../hooks/useCube";
+import { Alg } from "../types/Alg";
 
 const colors = {
   [Face.F]: styles.c_blue,
@@ -47,92 +48,92 @@ export function CubeRenderer() {
     switch (e.key) {
       case "w":
         setCube((d) => {
-          d.alg("B");
+          d.apply(new Alg("B"));
         });
         return;
       case "e":
         setCube((d) => {
-          d.alg("L'");
+          d.apply(new Alg("L'"));
         });
         return;
       case "i":
         setCube((d) => {
-          d.alg("R");
+          d.apply(new Alg("R"));
         });
         return;
       case "o":
         setCube((d) => {
-          d.alg("B'");
+          d.apply(new Alg("B'"));
         });
         return;
       case "s":
         setCube((d) => {
-          d.alg("D");
+          d.apply(new Alg("D"));
         });
         return;
       case "d":
         setCube((d) => {
-          d.alg("L");
+          d.apply(new Alg("L"));
         });
         return;
       case "f":
         setCube((d) => {
-          d.alg("U'");
+          d.apply(new Alg("U'"));
         });
         return;
       case "g":
         setCube((d) => {
-          d.alg("F'");
+          d.apply(new Alg("F'"));
         });
         return;
       case "h":
         setCube((d) => {
-          d.alg("F");
+          d.apply(new Alg("F"));
         });
         return;
       case "j":
         setCube((d) => {
-          d.alg("U");
+          d.apply(new Alg("U"));
         });
         return;
       case "k":
         setCube((d) => {
-          d.alg("R'");
+          d.apply(new Alg("R'"));
         });
         return;
       case "l":
         setCube((d) => {
-          d.alg("D'");
+          d.apply(new Alg("D'"));
         });
         return;
       case "x":
         setCube((d) => {
-          d.alg("M'");
+          d.apply(new Alg("M'"));
         });
         return;
       case ".":
         setCube((d) => {
-          d.alg("M'");
+          d.apply(new Alg("M'"));
         });
         return;
       case "5":
         setCube((d) => {
-          d.alg("M");
+          d.apply(new Alg("M"));
         });
         return;
       case "6":
         setCube((d) => {
-          d.alg("M");
+          d.apply(new Alg("M"));
         });
         return;
       case "u":
         setCube((d) => {
-          d.alg("r");
+          d.apply(new Alg("r"));
         });
         return;
       case "m":
         setCube((d) => {
-          d.alg("r'");
+          d.apply(new Alg("r'"));
         });
         return;
     }

@@ -1,3 +1,5 @@
+import { Alg } from "./Alg";
+
 export enum Face {
   F = "F",
   B = "B",
@@ -17,7 +19,7 @@ export enum Slice {
   S = "S",
 }
 
-type Move = [Face | Rotation, 1 | 2 | 3];
+export type Move = [Face | Rotation, 1 | 2 | 3];
 type Sticker = [Face, number];
 
 export type MaskedFace = {
@@ -25,13 +27,13 @@ export type MaskedFace = {
   mask: boolean;
 };
 
-function isFace(value: string | undefined): value is Face {
+export function isFace(value: string | undefined): value is Face {
   return Object.values(Face).includes(value as Face);
 }
-function isSlice(value: string | undefined): value is Slice {
+export function isSlice(value: string | undefined): value is Slice {
   return Object.values(Slice).includes(value as Slice);
 }
-function isRotation(value: string | undefined): value is Rotation {
+export function isRotation(value: string | undefined): value is Rotation {
   return Object.values(Rotation).includes(value as Rotation);
 }
 
@@ -217,88 +219,6 @@ const rotationToWings: Record<Rotation, Face[]> = {
   [Rotation.z]: [Face.F, Face.B],
 };
 
-const wide: Record<Face, Move[]> = {
-  [Face.F]: [
-    [Face.B, 1],
-    [Rotation.z, 1],
-  ],
-  [Face.B]: [
-    [Face.F, 1],
-    [Rotation.z, 3],
-  ],
-  [Face.L]: [
-    [Face.R, 1],
-    [Rotation.x, 3],
-  ],
-  [Face.R]: [
-    [Face.L, 1],
-    [Rotation.x, 1],
-  ],
-  [Face.U]: [
-    [Face.D, 1],
-    [Rotation.y, 1],
-  ],
-  [Face.D]: [
-    [Face.U, 1],
-    [Rotation.y, 3],
-  ],
-};
-
-const slice: Record<Slice, Move[]> = {
-  [Slice.S]: [
-    [Face.F, 3],
-    [Face.B, 1],
-    [Rotation.z, 1],
-  ],
-  [Slice.E]: [
-    [Face.U, 3],
-    [Face.D, 1],
-    [Rotation.y, 1],
-  ],
-  [Slice.M]: [
-    [Face.R, 1],
-    [Face.L, 3],
-    [Rotation.x, 3],
-  ],
-};
-
-function mult(r: Move, x: number): Move {
-  const clone: Move = [...r];
-  clone[1] *= x;
-  clone[1] %= 4;
-  return clone;
-}
-
-function stringToMoves(move: string): Move[] {
-  if (move.length == 0) {
-    throw new Error("Invalid move");
-  }
-  const initial = move[0]!;
-  let result;
-  if (isRotation(initial) || isFace(initial)) {
-    result = [[initial, 1] as Move];
-  } else if (isSlice(initial)) {
-    result = slice[initial];
-  } else {
-    const upper = initial.toUpperCase();
-    if (!isFace(upper)) {
-      throw new Error("Invalid move");
-    }
-    result = wide[upper];
-  }
-  if (move.length == 1) {
-    return result;
-  }
-  switch (move.substring(1)) {
-    case "2":
-    case "2'":
-      return result.map((r) => mult(r, 2));
-    case "'":
-      return result.map((r) => mult(r, 3));
-    default:
-      throw new Error("Invalid turn");
-  }
-}
 export class Cube {
   state: Record<Face, MaskedFace[]>;
   solved: boolean;
@@ -327,6 +247,12 @@ export class Cube {
     return this;
   }
 
+  // TODO ideally this would not be owned here,
+  // e.g. to customize trainers for different steps,
+  // CMLL, LSE/L10P, CMLL+4a, CMLL+EOLR/EOLRb, etc
+  // similar pattern to scrambler, we want a solveChecker or something
+  // at this point it may make sense to expand the CubeProvider
+  // to some kind of CubeContextProvider
   private isSolved(): boolean {
     for (const i of [0, 2, 6, 8]) {
       if (this.state.U[i].face !== Face.U) return false;
@@ -339,14 +265,9 @@ export class Cube {
     return true;
   }
 
-  alg(movesStr: string, inverse: boolean = false): this {
-    const moves = movesStr.split(" ");
-    let simpl = moves.flatMap(stringToMoves);
-    if (inverse) {
-      simpl.reverse();
-      simpl = simpl.map((m) => mult(m, 3));
-    }
-    for (const [initial, turns] of simpl) {
+  apply(alg: Alg): this {
+    const moves = alg.moves;
+    for (const [initial, turns] of moves) {
       if (isRotation(initial)) {
         this._rotateCube(initial, turns);
       } else {
