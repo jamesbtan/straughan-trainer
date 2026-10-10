@@ -1,6 +1,6 @@
 import * as Cube from "./Cube";
 
-const slice: Record<Cube.Slice, Cube.Move[]> = {
+const slice: Record<Cube.Slice, Cube.SimpleMove[]> = {
   [Cube.Slice.S]: [
     [Cube.Face.F, 3],
     [Cube.Face.B, 1],
@@ -18,7 +18,7 @@ const slice: Record<Cube.Slice, Cube.Move[]> = {
   ],
 };
 
-const wide: Record<Cube.Face, Cube.Move[]> = {
+const wide: Record<Cube.Face, Cube.SimpleMove[]> = {
   [Cube.Face.F]: [
     [Cube.Face.B, 1],
     [Cube.Rotation.z, 1],
@@ -50,20 +50,25 @@ export class Alg {
 
   constructor(algStr?: string) {
     if (algStr !== undefined) {
-      this.moves = algStr.split(" ").flatMap(stringToMoves);
+      this.moves = algStr.split(" ").map(stringToMove);
     } else {
       this.moves = [];
     }
   }
 
-  private pushMove(move: [Cube.Face, number] | Cube.Move) {
-    move[1] %= 4;
-    if (move[1] !== 0) {
-      this.moves.push(move as Cube.Move);
+  get simpleMoves(): Cube.SimpleMove[] {
+    return this.moves.flatMap(simplify);
+  }
+
+  private pushMove(move: Cube.Move) {
+    let moveCopy = { ...move };
+    moveCopy.count %= 4;
+    if (moveCopy.count !== 0) {
+      this.moves.push(moveCopy);
     }
   }
 
-  static fromMoves(moves: ([Cube.Face, number] | Cube.Move)[]): Alg {
+  static from(moves: Cube.Move[]): Alg {
     let alg = new Alg();
     alg.andThen(moves);
     return alg;
@@ -77,36 +82,65 @@ export class Alg {
     return this;
   }
 
-  andThen(moves: ([Cube.Face, number] | Cube.Move)[]): Alg {
+  andThen(moves: Cube.Move[]): Alg {
     for (const move of moves) {
       this.pushMove(move);
     }
     return this;
   }
+
+  toString(): string {
+    return this.moves.map(moveToString).join(" ");
+  }
 }
 
-function mult(r: Cube.Move, x: number) {
+function multSimple(r: Cube.SimpleMove, x: number) {
   r[1] *= x;
   r[1] %= 4;
   return r;
 }
 
-function stringToMoves(move: string): Cube.Move[] {
+function mult(r: Cube.Move, x: number) {
+  r.count *= x;
+  r.count %= 4;
+  return r;
+}
+
+function stringToMove(move: string): Cube.Move {
   if (move.length == 0) {
     throw new Error("Invalid move");
   }
   const initial = move[0]!;
-  let result;
-  if (Cube.isRotation(initial) || Cube.isFace(initial)) {
-    result = [[initial, 1] as Cube.Move];
+  let result: Cube.Move;
+  if (Cube.isRotation(initial)) {
+    result = {
+      kind: "rotation",
+      move: initial,
+      count: 1,
+    };
+  } else if (Cube.isFace(initial)) {
+    result = {
+      kind: "face",
+      move: initial,
+      count: 1,
+    };
   } else if (Cube.isSlice(initial)) {
-    result = slice[initial].map((m) => [...m] as Cube.Move);
+    result = {
+      kind: "slice",
+      move: initial,
+      count: 1,
+    };
   } else {
     const upper = initial.toUpperCase();
     if (!Cube.isFace(upper)) {
       throw new Error("Invalid move");
     }
-    result = wide[upper].map((m) => [...m] as Cube.Move);
+    result = {
+      kind: "face",
+      move: upper,
+      count: 1,
+      wide: true,
+    };
   }
   if (move.length == 1) {
     return result;
@@ -114,10 +148,49 @@ function stringToMoves(move: string): Cube.Move[] {
   switch (move.substring(1)) {
     case "2":
     case "2'":
-      return result.map((r) => mult(r, 2));
+      return mult(result, 2);
     case "'":
-      return result.map((r) => mult(r, 3));
+      return mult(result, 3);
     default:
       throw new Error("Invalid turn");
   }
+}
+
+function simplify(move: Cube.Move): Cube.SimpleMove[] {
+  if (move.count !== 1 && move.count !== 2 && move.count !== 3) {
+    throw new Error("unreachable");
+  }
+  switch (move.kind) {
+    case "rotation":
+      return [[move.move, move.count]];
+    case "face":
+      if (move.wide) {
+        return wide[move.move].map((m) => {
+          return multSimple([...m], move.count) as Cube.SimpleMove;
+        });
+      }
+      return [[move.move, move.count]];
+    case "slice":
+      return slice[move.move].map((m) => {
+        return multSimple([...m], move.count) as Cube.SimpleMove;
+      });
+  }
+}
+
+function moveToString(move: Cube.Move): string {
+  let initial: string;
+  if (move.kind === "face" && move.wide) {
+    initial = move.move.toLowerCase();
+  } else {
+    initial = move.move;
+  }
+  switch (move.count) {
+    case 1:
+      return initial;
+    case 2:
+      return initial + "2";
+    case 3:
+      return initial + "'";
+  }
+  throw new Error("unreachable");
 }

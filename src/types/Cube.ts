@@ -19,7 +19,25 @@ export enum Slice {
   S = "S",
 }
 
-export type Move = [Face | Rotation, 1 | 2 | 3];
+export type SimpleMove = [Face | Rotation, 1 | 2 | 3];
+export type Move = (
+  | {
+      kind: "face";
+      move: Face;
+      wide?: boolean;
+    }
+  | {
+      kind: "rotation";
+      move: Rotation;
+    }
+  | {
+      kind: "slice";
+      move: Slice;
+    }
+) & {
+  count: number;
+};
+
 type Sticker = [Face, number];
 
 export type MaskedFace = {
@@ -266,7 +284,7 @@ export class Cube {
   }
 
   apply(alg: Alg): this {
-    const moves = alg.moves;
+    const moves = alg.simpleMoves;
     for (const [initial, turns] of moves) {
       if (isRotation(initial)) {
         this._rotateCube(initial, turns);
