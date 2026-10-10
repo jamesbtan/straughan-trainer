@@ -1,11 +1,11 @@
 import { Show } from "solid-js";
-import { useCube } from "../hooks/useCube";
+import { useCubeCtx } from "../hooks/useCube";
 
 export function StatusBar() {
-  const [cube] = useCube();
+  const [ctx] = useCubeCtx();
 
   return (
-    <Show when={cube.solved} fallback={<>Unsolved</>}>
+    <Show when={ctx.cube.solved} fallback={<>Unsolved</>}>
       Solved
     </Show>
   );

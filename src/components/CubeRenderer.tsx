@@ -1,8 +1,9 @@
 import styles from "./CubeRenderer.module.css";
 import { Face, MaskedFace } from "../types/Cube";
 import { onSettled, Repeat } from "solid-js";
-import { useCube } from "../hooks/useCube";
+import { useCubeCtx } from "../hooks/useCube";
 import { Alg } from "../types/Alg";
+import { useScrambler } from "../hooks/useScrambler";
 
 const colors = {
   [Face.F]: styles.c_blue,
@@ -40,100 +41,113 @@ function Sticker(props: StickerProps) {
 }
 
 export function CubeRenderer() {
-  const [cube, setCube] = useCube();
+  const [ctx, setCubeCtx] = useCubeCtx();
+  const { scramble, reset } = useScrambler();
 
   const handleKeydown = (e: KeyboardEvent) => {
-    // console.log(e);
     // TODO swap to keyCode
     switch (e.key) {
+      case " ":
+        if (ctx.cube.solved) {
+          scramble();
+        } else {
+          reset();
+          // TODO show solution
+          console.log("unsolved");
+        }
+        return;
+      case "Backspace":
+      case "Escape":
+        reset();
+        return;
       case "w":
-        setCube((d) => {
-          d.apply(new Alg("B"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("B"));
         });
         return;
       case "e":
-        setCube((d) => {
-          d.apply(new Alg("L'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("L'"));
         });
         return;
       case "i":
-        setCube((d) => {
-          d.apply(new Alg("R"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("R"));
         });
         return;
       case "o":
-        setCube((d) => {
-          d.apply(new Alg("B'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("B'"));
         });
         return;
       case "s":
-        setCube((d) => {
-          d.apply(new Alg("D"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("D"));
         });
         return;
       case "d":
-        setCube((d) => {
-          d.apply(new Alg("L"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("L"));
         });
         return;
       case "f":
-        setCube((d) => {
-          d.apply(new Alg("U'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("U'"));
         });
         return;
       case "g":
-        setCube((d) => {
-          d.apply(new Alg("F'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("F'"));
         });
         return;
       case "h":
-        setCube((d) => {
-          d.apply(new Alg("F"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("F"));
         });
         return;
       case "j":
-        setCube((d) => {
-          d.apply(new Alg("U"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("U"));
         });
         return;
       case "k":
-        setCube((d) => {
-          d.apply(new Alg("R'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("R'"));
         });
         return;
       case "l":
-        setCube((d) => {
-          d.apply(new Alg("D'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("D'"));
         });
         return;
       case "x":
-        setCube((d) => {
-          d.apply(new Alg("M'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("M'"));
         });
         return;
       case ".":
-        setCube((d) => {
-          d.apply(new Alg("M'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("M'"));
         });
         return;
       case "5":
-        setCube((d) => {
-          d.apply(new Alg("M"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("M"));
         });
         return;
       case "6":
-        setCube((d) => {
-          d.apply(new Alg("M"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("M"));
         });
         return;
       case "u":
-        setCube((d) => {
-          d.apply(new Alg("r"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("r"));
         });
         return;
       case "m":
-        setCube((d) => {
-          d.apply(new Alg("r'"));
+        setCubeCtx((d) => {
+          d.cube.apply(new Alg("r'"));
         });
         return;
     }
@@ -147,40 +161,46 @@ export function CubeRenderer() {
   });
 
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
-      <rect width="240" height="240" rx="14" class={styles.bg} />
+    <>
+      <button onClick={() => scramble()}>Scramble</button>
+      <button onClick={() => reset()}>Reset</button>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+        <rect width="240" height="240" rx="14" class={styles.bg} />
 
-      <Repeat count={3}>
-        {(i) => <Sticker face={cube.state.B[i]} x={52 + (2 - i) * 48} y={28} w={40} h={12} />}
-      </Repeat>
+        <Repeat count={3}>
+          {(i) => <Sticker face={ctx.cube.state.B[i]} x={52 + (2 - i) * 48} y={28} w={40} h={12} />}
+        </Repeat>
 
-      <Repeat count={3}>
-        {(i) => <Sticker face={cube.state.L[i]} x={28} y={52 + i * 48} w={12} h={40} />}
-      </Repeat>
+        <Repeat count={3}>
+          {(i) => <Sticker face={ctx.cube.state.L[i]} x={28} y={52 + i * 48} w={12} h={40} />}
+        </Repeat>
 
-      <Repeat count={3}>
-        {(i) => <Sticker face={cube.state.R[i]} x={200} y={52 + (2 - i) * 48} w={12} h={40} />}
-      </Repeat>
+        <Repeat count={3}>
+          {(i) => (
+            <Sticker face={ctx.cube.state.R[i]} x={200} y={52 + (2 - i) * 48} w={12} h={40} />
+          )}
+        </Repeat>
 
-      <Repeat count={3}>
-        {(i) => <Sticker face={cube.state.F[i]} x={52 + i * 48} y={200} w={40} h={12} />}
-      </Repeat>
+        <Repeat count={3}>
+          {(i) => <Sticker face={ctx.cube.state.F[i]} x={52 + i * 48} y={200} w={40} h={12} />}
+        </Repeat>
 
-      <Repeat count={3}>
-        {(i) => (
-          <Repeat count={3}>
-            {(j) => (
-              <Sticker
-                face={cube.state.U[3 * i + j]}
-                x={52 + j * 48}
-                y={52 + i * 48}
-                w={40}
-                h={40}
-              />
-            )}
-          </Repeat>
-        )}
-      </Repeat>
-    </svg>
+        <Repeat count={3}>
+          {(i) => (
+            <Repeat count={3}>
+              {(j) => (
+                <Sticker
+                  face={ctx.cube.state.U[3 * i + j]}
+                  x={52 + j * 48}
+                  y={52 + i * 48}
+                  w={40}
+                  h={40}
+                />
+              )}
+            </Repeat>
+          )}
+        </Repeat>
+      </svg>
+    </>
   );
 }
