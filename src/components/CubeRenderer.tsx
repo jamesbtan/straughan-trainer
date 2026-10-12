@@ -1,6 +1,6 @@
 import styles from "./CubeRenderer.module.css";
 import { Face, MaskedFace } from "../types/Cube";
-import { createSignal, onSettled, Repeat, Show } from "solid-js";
+import { onSettled, Repeat } from "solid-js";
 import { useCubeCtx } from "../hooks/useCube";
 import { Alg } from "../types/Alg";
 import { useScrambler } from "../hooks/useScrambler";
@@ -43,7 +43,6 @@ function Sticker(props: StickerProps) {
 export function CubeRenderer() {
   const [ctx, setCubeCtx] = useCubeCtx();
   const { scramble, reset } = useScrambler();
-  const [showSolution, setShowSolution] = createSignal(false);
 
   const handleKeydown = (e: KeyboardEvent) => {
     // TODO swap to keyCode
@@ -53,13 +52,17 @@ export function CubeRenderer() {
           scramble();
         } else {
           reset();
-          setShowSolution(true);
+          setCubeCtx((d) => {
+            d.showSolution = true;
+          });
         }
         return;
       case "Backspace":
       case "Escape":
         reset();
-        setShowSolution(false);
+        setCubeCtx((d) => {
+          d.showSolution = false;
+        });
         return;
       case "w":
         setCubeCtx((d) => {
@@ -162,47 +165,40 @@ export function CubeRenderer() {
   });
 
   return (
-    <>
-      <button onClick={() => scramble()}>Scramble</button>
-      <button onClick={() => reset()}>Reset</button>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
-        <rect width="240" height="240" rx="14" class={styles.bg} />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+      <rect width="240" height="240" rx="14" class={styles.bg} />
 
-        <Repeat count={3}>
-          {(i) => <Sticker face={ctx.cube.state.B[i]} x={52 + (2 - i) * 48} y={28} w={40} h={12} />}
-        </Repeat>
+      <Repeat count={3}>
+        {(i) => <Sticker face={ctx.cube.state.B[i]} x={52 + (2 - i) * 48} y={28} w={40} h={12} />}
+      </Repeat>
 
-        <Repeat count={3}>
-          {(i) => <Sticker face={ctx.cube.state.L[i]} x={28} y={52 + i * 48} w={12} h={40} />}
-        </Repeat>
+      <Repeat count={3}>
+        {(i) => <Sticker face={ctx.cube.state.L[i]} x={28} y={52 + i * 48} w={12} h={40} />}
+      </Repeat>
 
-        <Repeat count={3}>
-          {(i) => (
-            <Sticker face={ctx.cube.state.R[i]} x={200} y={52 + (2 - i) * 48} w={12} h={40} />
-          )}
-        </Repeat>
+      <Repeat count={3}>
+        {(i) => <Sticker face={ctx.cube.state.R[i]} x={200} y={52 + (2 - i) * 48} w={12} h={40} />}
+      </Repeat>
 
-        <Repeat count={3}>
-          {(i) => <Sticker face={ctx.cube.state.F[i]} x={52 + i * 48} y={200} w={40} h={12} />}
-        </Repeat>
+      <Repeat count={3}>
+        {(i) => <Sticker face={ctx.cube.state.F[i]} x={52 + i * 48} y={200} w={40} h={12} />}
+      </Repeat>
 
-        <Repeat count={3}>
-          {(i) => (
-            <Repeat count={3}>
-              {(j) => (
-                <Sticker
-                  face={ctx.cube.state.U[3 * i + j]}
-                  x={52 + j * 48}
-                  y={52 + i * 48}
-                  w={40}
-                  h={40}
-                />
-              )}
-            </Repeat>
-          )}
-        </Repeat>
-      </svg>
-      <Show when={showSolution()}>{ctx.solution}</Show>
-    </>
+      <Repeat count={3}>
+        {(i) => (
+          <Repeat count={3}>
+            {(j) => (
+              <Sticker
+                face={ctx.cube.state.U[3 * i + j]}
+                x={52 + j * 48}
+                y={52 + i * 48}
+                w={40}
+                h={40}
+              />
+            )}
+          </Repeat>
+        )}
+      </Repeat>
+    </svg>
   );
 }

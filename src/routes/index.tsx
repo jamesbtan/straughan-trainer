@@ -1,9 +1,9 @@
 import { Title } from "@solidjs/meta";
 import { CubeRenderer } from "../components/CubeRenderer";
 import { AlgSelector } from "../components/AlgSelector";
-import { StatusBar } from "../components/StatusBar";
 import { Cube, Face } from "../types/Cube";
 import { createCubeCtx, CubeStore, CubeContext } from "../hooks/useCube";
+import { CubeControls } from "../components/CubeControls";
 
 const F2B_W_STRAUGHAN = Cube.allStickers().filter(([face, index]) => {
   const m_slice = index % 3 === 1;
@@ -45,9 +45,9 @@ export default function Home() {
     <main>
       <Title>Home - Solid App</Title>
       <CubeContext value={cubeContext}>
-        <StatusBar />
         <AlgSelector />
         <CubeRenderer />
+        <CubeControls />
       </CubeContext>
     </main>
   );
