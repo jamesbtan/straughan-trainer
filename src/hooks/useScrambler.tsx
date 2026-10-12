@@ -1,5 +1,5 @@
 import { createEffect } from "solid-js";
-import { setScramble, useCubeCtx } from "./useCube";
+import { useCubeCtx } from "./useCube";
 import { Face } from "../types/Cube";
 import { CANONICAL_ALGS, INVERSE_MAP, InverseElement } from "../data/algs";
 import { enabled } from "../components/AlgSelector";
@@ -74,7 +74,7 @@ export function useScrambler() {
     (scrambler) => {
       setCtx((d) => {
         d.scrambler = scrambler;
-        setScramble(d, scrambler?.());
+        d.setScramble(scrambler?.());
         d.reset?.(d);
       });
     },
@@ -83,7 +83,8 @@ export function useScrambler() {
   return {
     scramble: () =>
       setCtx((d) => {
-        setScramble(d, d.scrambler?.());
+        d.setScramble(d.scrambler?.());
+        d.showSolution = false;
         d.reset?.(d);
       }),
     reset: () => setCtx((d) => d.reset?.(d)),

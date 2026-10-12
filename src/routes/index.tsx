@@ -34,10 +34,12 @@ function _reset(self: CubeStore) {
 }
 
 export default function Home() {
-  const cubeContext = createCubeCtx({
-    cube: new Cube(),
-    reset: _reset,
-  });
+  const cubeContext = createCubeCtx(
+    new CubeStore({
+      cube: new Cube(),
+      reset: _reset,
+    }),
+  );
 
   return (
     <main>
