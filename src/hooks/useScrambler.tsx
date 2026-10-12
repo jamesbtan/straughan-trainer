@@ -2,8 +2,9 @@ import { createEffect } from "solid-js";
 import { useCubeCtx } from "./useCube";
 import { Face } from "../types/Cube";
 import { CANONICAL_ALGS, INVERSE_MAP, InverseElement } from "../data/algs";
-import { enabled, useFilters } from "../components/AlgSelector";
+import { enabled } from "../components/AlgSelector";
 import { Alg } from "../types/Alg";
+import { useFilters } from "./useFilters";
 
 function getScramble(options: InverseElement[][]): Alg {
   const probs: number[] = Array.from({ length: options.length + 1 });
