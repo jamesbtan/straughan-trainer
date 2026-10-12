@@ -45,13 +45,6 @@ export function CubeRenderer() {
   const { scramble, reset } = useScrambler();
   const [showSolution, setShowSolution] = createSignal(false);
 
-  const solution = () => {
-    if (ctx.scramble === undefined) {
-      return undefined;
-    }
-    return Alg.from(ctx.scramble.moves).invert().toString();
-  };
-
   const handleKeydown = (e: KeyboardEvent) => {
     // TODO swap to keyCode
     switch (e.key) {
@@ -209,7 +202,7 @@ export function CubeRenderer() {
           )}
         </Repeat>
       </svg>
-      <Show when={showSolution()}>{solution()}</Show>
+      <Show when={showSolution()}>{ctx.solution}</Show>
     </>
   );
 }
